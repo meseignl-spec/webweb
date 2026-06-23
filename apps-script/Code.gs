@@ -103,47 +103,42 @@ function handleSearch(p) {
     };
   }
 
-  // ── Build BL → REF map (second table, REF header in col A) ──
-  const blMap = {};
+  // ── Build BL list with per-BL payment/warehouse/EDO (Table 2) ──
+  // Table 2 columns: A=REF, B=BL, C=customer payment status, D=warehouse status, E=EDO
+  const blList = [];
   let inBlTable = false;
+  let lastRef   = '';
   for (let i = 0; i < allData.length; i++) {
-    const row   = allData[i];
-    const colA  = String(row[0]).trim().toUpperCase();
-    const colB  = String(row[1]).trim();
-    if (colA === 'REF') { inBlTable = true; continue; }
+    const row  = allData[i];
+    const colA = String(row[0]).trim();
+    const colB = String(row[1]).trim();
+    if (colA.toUpperCase() === 'REF') { inBlTable = true; continue; }
     if (!inBlTable) continue;
     if (!colB) continue;
-    // REF may span multiple BL rows (merged cell shows only on first)
-    const ref = colA || (Object.keys(blMap).length ? Object.values(blMap).slice(-1)[0] : '');
-    if (ref) blMap[colB.toUpperCase()] = ref.toUpperCase();
-  }
-
-  // ── Lookup: BL → REF → shipment ──
-  let results = [];
-
-  // Exact BL match
-  if (blMap[blQuery]) {
-    const ref = blMap[blQuery];
-    const s   = shipments[ref];
-    if (s) results.push({ ...s, bl: blQuery, ref });
-  }
-
-  // Partial BL match
-  if (!results.length) {
-    Object.entries(blMap).forEach(([bl, ref]) => {
-      if (bl.includes(blQuery)) {
-        const s = shipments[ref];
-        if (s && !results.find(r => r.bl === bl)) results.push({ ...s, bl, ref });
-      }
+    // REF column may be blank for subsequent BL rows (merged cell)
+    if (colA) lastRef = colA.toUpperCase();
+    blList.push({
+      ref      : lastRef,
+      bl       : colB,
+      payment  : String(row[2] || '').trim(),
+      warehouse: String(row[3] || '').trim(),
+      edo      : String(row[4] || '').trim(),
     });
   }
 
-  // Direct REF/MBL match fallback
-  if (!results.length) {
-    Object.entries(shipments).forEach(([ref, s]) => {
-      if (ref.includes(blQuery)) results.push({ ...s, bl: ref, ref });
+  // ── Lookup ──
+  let matches = blList.filter(b => b.bl.toUpperCase() === blQuery);
+  if (!matches.length) matches = blList.filter(b => b.bl.toUpperCase().includes(blQuery) || b.ref.includes(blQuery));
+  // Direct REF fallback
+  if (!matches.length) {
+    Object.keys(shipments).filter(r => r.includes(blQuery)).forEach(ref => {
+      matches.push({ ref, bl: ref, payment: '', warehouse: '', edo: '' });
     });
   }
+
+  const results = matches
+    .map(b => ({ ...shipments[b.ref], ...b }))
+    .filter(r => r.etd);
 
   return { success: true, results };
 }

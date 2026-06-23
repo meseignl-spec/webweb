@@ -198,8 +198,8 @@
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
       <circle cx="12" cy="10" r="3"/>
     </svg>
-    <h3>Enter a BL# or container number above</h3>
-    <p>We'll show you real-time ETD, ETA, AN status, payment, and warehouse updates</p>
+    <h3>Enter your BL number above to get started</h3>
+    <p>We'll show you ETD, ETA, AN status, payment, warehouse status, and EDO in real time</p>
   </div>
 </div>
 
@@ -222,7 +222,7 @@
       <button class="chat-close-btn" onclick="toggleChat()">✕</button>
     </div>
     <div class="chat-msgs" id="chatMsgs">
-      <div class="msg bot"><div class="msg-bubble">Xin chào! 👋 Nhập BL# hoặc số container để tra cứu.<br><br>Bạn cũng có thể hỏi tôi trực tiếp về lô hàng của bạn.</div></div>
+      <div class="msg bot"><div class="msg-bubble">Hi! 👋 Search your BL number above, or ask me directly about your shipment status, payment, or EDO.</div></div>
     </div>
     <div class="chat-input-row">
       <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your shipment…" />
@@ -237,24 +237,24 @@
 </div>
 
 <script>
-// ── DATA từ Google Sheet (REF/BL mapping + Shipment table) ──────────────
-// Table 1: shipments keyed by MBL/REF
+// ── Table 1: Shipment info keyed by REF/MBL ──────────────────────────────
 const SHIPMENTS = {
-  'YMJAI450539435': { type:'CONSOL', agent:'USG',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
-  'CFPS26002026':   { type:'LCL',    agent:'FPS',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
-  'YMJAI450539461': { type:'CONSOL', agent:'AIRROW',    etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
-  'YMJAI202650913': { type:'CONSOL', agent:'dolphin',   etd:'22/06/2026', eta:'25/06/2026', vessel:'ANBIEN BAY 2606S',              mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'QUYEN HANDLE'         },
-  '757610372538':   { type:'CONSOL', agent:'SHANGHONG', etd:'21/06/2026', eta:'25/06/2026', vessel:'ZHONG GU DI ZHONG HAI V.625S',  mnf:'X', pq:'X', an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:''                     },
-  'SITLSHHPA86729': { type:'CONSOL', agent:'VAST',      etd:'22/06/2026', eta:'26/06/2026', vessel:'SITC QINGDAO V.2616S',          mnf:'X', pq:'X', an:'SENT', invPaid:'', edo:'', kho:'ARRIVED', dnAgent:'', khPaid:'PAID', tonKho:'WAITING FOR PICK UP', note:'done nhap' },
+  'YMJAI450539435': { type:'CONSOL', agent:'USG',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              mnf:'',  pq:'',  an:'',     note:'CÓ AN/ DL 17H 26/6' },
+  'CFPS26002026':   { type:'LCL',    agent:'FPS',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              mnf:'',  pq:'',  an:'',     note:'CÓ AN/ DL 17H 26/6' },
+  'YMJAI450539461': { type:'CONSOL', agent:'AIRROW',    etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              mnf:'',  pq:'',  an:'',     note:'CÓ AN/ DL 17H 26/6' },
+  'YMJAI202650913': { type:'CONSOL', agent:'dolphin',   etd:'22/06/2026', eta:'25/06/2026', vessel:'ANBIEN BAY 2606S',             mnf:'',  pq:'',  an:'',     note:'QUYEN HANDLE'        },
+  '757610372538':   { type:'CONSOL', agent:'SHANGHONG', etd:'21/06/2026', eta:'25/06/2026', vessel:'ZHONG GU DI ZHONG HAI V.625S', mnf:'X', pq:'X', an:'',     note:''                    },
+  'SITLSHHPA86729': { type:'CONSOL', agent:'VAST',      etd:'22/06/2026', eta:'26/06/2026', vessel:'SITC QINGDAO V.2616S',         mnf:'X', pq:'X', an:'SENT', note:'done nhap'           },
 };
 
-// Table 2: BL → REF lookup
-const BL_MAP = {
-  'YMJAI450539435 - 01': 'YMJAI450539435',
-  'YMJAI450539435 - 02': 'YMJAI450539435',
-  'YMJAI450539435 - 03': 'YMJAI450539435',
-  'YMJAI450539435 - 04': 'YMJAI450539435',
-};
+// ── Table 2: BL entries with per-BL payment, warehouse, EDO ──────────────
+const BL_LIST = [
+  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 01', payment:'PAID',    warehouse:'',                   edo:'NOT YET'  },
+  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 02', payment:'PAID',    warehouse:'PICKED UP',          edo:'RELEASED' },
+  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 03', payment:'PAID',    warehouse:'WAITING FOR PICK UP',edo:'RELEASED' },
+  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 04', payment:'',        warehouse:'',                   edo:''         },
+  { ref:'SITLSHHPA86729', bl:'SITLSHHPA867290001',  payment:'',        warehouse:'',                   edo:''         },
+];
 
 // ── SEARCH ────────────────────────────────────────────────────────────────
 document.getElementById('searchInput').addEventListener('keydown', e => {
@@ -266,55 +266,33 @@ function doSearch() {
   const q   = raw.toUpperCase();
   if (!q) return;
 
-  // 1. Try exact BL match from BL_MAP
-  let results = [];
-  const blKey = Object.keys(BL_MAP).find(k => k.toUpperCase() === q);
-  if (blKey) {
-    const ref = BL_MAP[blKey];
-    const s   = SHIPMENTS[ref];
-    if (s) results = [{ ...s, bl: blKey, ref }];
-  }
+  // Match BL entries (exact first, then partial)
+  let matches = BL_LIST.filter(b => b.bl.toUpperCase() === q);
+  if (!matches.length) matches = BL_LIST.filter(b => b.bl.toUpperCase().includes(q) || b.ref.toUpperCase().includes(q));
 
-  // 2. Fallback: partial match on BL or REF
-  if (!results.length) {
-    // Check BL map partial
-    Object.entries(BL_MAP).forEach(([bl, ref]) => {
-      if (bl.toUpperCase().includes(q)) {
-        const s = SHIPMENTS[ref];
-        if (s && !results.find(r => r.bl === bl)) results.push({ ...s, bl, ref });
-      }
-    });
-    // Check REF direct
-    Object.entries(SHIPMENTS).forEach(([ref, s]) => {
-      if (ref.toUpperCase().includes(q) && !results.find(r => r.ref === ref)) {
-        results.push({ ...s, bl: ref, ref });
-      }
-    });
-  }
+  // Merge BL data with shipment data
+  const results = matches.map(b => ({ ...SHIPMENTS[b.ref], ...b })).filter(r => r.etd);
 
   document.getElementById('defaultState').style.display = 'none';
   document.getElementById('resultArea').style.display   = 'block';
-  document.getElementById('resultCount').textContent    = `${results.length} kết quả`;
+  document.getElementById('resultCount').textContent    = `${results.length} result${results.length !== 1 ? 's' : ''} found`;
   document.getElementById('resultList').innerHTML       = results.length
     ? results.map(s => renderCard(s)).join('')
-    : `<div class="empty"><h3>Không tìm thấy BL "<strong>${raw}</strong>"</h3><p>Vui lòng kiểm tra lại số BL hoặc liên hệ WeDo Forwarding.</p></div>`;
+    : `<div class="empty"><h3>No shipment found for "<strong>${raw}</strong>"</h3><p>Please check your BL number or contact WeDo Forwarding.</p></div>`;
+}
+
+function warehouseBadge(w) {
+  const v = String(w || '').toUpperCase();
+  if (v.includes('PICKED UP'))  return ['b-ok',   'Picked Up'];
+  if (v.includes('WAITING'))    return ['b-warn',  'Waiting for Pick Up'];
+  if (v === 'ARRIVED')          return ['b-blue',  'Arrived'];
+  if (v === 'UNSTUFFED')        return ['b-warn',  'Unstuffed'];
+  if (v === 'READY')            return ['b-ok',    'Ready for Pick Up'];
+  return ['b-grey', w || 'Pending'];
 }
 
 function renderCard(s) {
-  const kho = String(s.kho || '').toUpperCase();
-  const khoMap = {
-    '':        ['b-grey', '— Chưa có thông tin'],
-    'PENDING': ['b-grey', 'Chờ hàng về'],
-    'ARRIVED': ['b-blue', 'Hàng đã về kho'],
-    'UNSTUFFED':['b-warn','Đã rút hàng'],
-    'READY':   ['b-ok',   'Sẵn sàng lấy hàng'],
-  };
-  // Also handle freetext like "WAITING FOR PICK UP"
-  let [khoCls, khoLabel] = khoMap[kho] || ['b-warn', s.kho];
-  if (s.tonKho && s.tonKho.toUpperCase().includes('WAITING')) { khoCls = 'b-ok'; khoLabel = 'Sẵn sàng lấy hàng'; }
-
-  const order   = ['', 'PENDING', 'ARRIVED', 'UNSTUFFED', 'READY'];
-  const isDone  = (step) => order.indexOf(kho) >= order.indexOf(step);
+  const [whCls, whLabel] = warehouseBadge(s.warehouse);
 
   return `
   <div class="shipment-card">
@@ -325,44 +303,42 @@ function renderCard(s) {
       </div>
       <div class="sc-badges">
         ${anBadge(s.an)}
-        ${payBadge(s.khPaid)}
-        <span class="badge ${khoCls}">${khoLabel}</span>
+        ${payBadge(s.payment)}
+        <span class="badge ${whCls}">${whLabel}</span>
       </div>
     </div>
 
     <div class="sc-grid">
       <div class="sc-cell"><div class="sc-label">ETD</div><div class="sc-value">${s.etd||'—'}</div></div>
       <div class="sc-cell"><div class="sc-label">ETA</div><div class="sc-value">${s.eta||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">AN</div><div class="sc-value">${s.an==='SENT'?'✓ Đã gửi':'Chưa gửi'}</div></div>
-      <div class="sc-cell"><div class="sc-label">Thanh toán (KH)</div><div class="sc-value">${s.khPaid||'Chưa TT'}</div></div>
-      <div class="sc-cell"><div class="sc-label">INV Carrier</div><div class="sc-value">${s.invPaid||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">AN Status</div><div class="sc-value">${s.an==='SENT'?'✓ Sent':'Not yet sent'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Payment</div><div class="sc-value">${s.payment||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Warehouse</div><div class="sc-value">${whLabel}</div></div>
       <div class="sc-cell"><div class="sc-label">EDO</div><div class="sc-value">${s.edo||'—'}</div></div>
     </div>
 
     <div class="sc-footer">
       <span class="sc-vessel">🚢 <strong>${s.vessel||'—'}</strong>${s.note ? ' &nbsp;·&nbsp; ' + s.note : ''}</span>
-      <button class="btn-detail-toggle" onclick="toggleDetail(this)">Chi tiết ▾</button>
+      <button class="btn-detail-toggle" onclick="toggleDetail(this)">More details ▾</button>
     </div>
 
     <div class="sc-detail">
       <div class="detail-row">
         <div class="detail-block">
-          <h4>Tiến độ lô hàng</h4>
+          <h4>Shipment Progress</h4>
           <div class="timeline">
-            ${tStep('Tàu khởi hành', isDone('ARRIVED'))}
-            ${tStep('Hàng về kho',   isDone('ARRIVED'))}
-            ${tStep('Đã rút hàng',   isDone('UNSTUFFED'))}
-            ${tStep('Sẵn sàng lấy', isDone('READY'))}
+            ${tStep('Vessel Departed', !!s.etd)}
+            ${tStep('Arrived at Port', ['ARRIVED','UNSTUFFED','READY','WAITING FOR PICK UP','PICKED UP'].some(v => String(s.warehouse||'').toUpperCase().includes(v.split(' ')[0])))}
+            ${tStep('Unstuffed / Released', String(s.edo||'').toUpperCase()==='RELEASED')}
+            ${tStep('Picked Up', String(s.warehouse||'').toUpperCase().includes('PICKED UP'))}
           </div>
         </div>
         <div class="detail-block">
-          <h4>Thông tin khác</h4>
+          <h4>Additional Info</h4>
           <dl>
-            <dt>MNF</dt>        <dd>${s.mnf||'—'}</dd>
-            <dt>PQ</dt>         <dd>${s.pq||'—'}</dd>
-            <dt>Tồn kho</dt>    <dd>${s.tonKho||'—'}</dd>
-            <dt>DN Agent</dt>   <dd>${s.dnAgent||'—'}</dd>
-            <dt>Ghi chú</dt>    <dd>${s.note||'—'}</dd>
+            <dt>MNF</dt>    <dd>${s.mnf||'—'}</dd>
+            <dt>PQ</dt>     <dd>${s.pq||'—'}</dd>
+            <dt>Note</dt>   <dd>${s.note||'—'}</dd>
           </dl>
         </div>
       </div>
@@ -375,21 +351,21 @@ function tStep(label, done) {
 }
 function anBadge(v) {
   return String(v).toUpperCase()==='SENT'
-    ? '<span class="badge b-ok">AN Đã gửi</span>'
-    : '<span class="badge b-grey">AN Chưa gửi</span>';
+    ? '<span class="badge b-ok">AN Sent</span>'
+    : '<span class="badge b-grey">AN Pending</span>';
 }
 function payBadge(v) {
   const val = String(v||'').toUpperCase();
-  if (val==='PAID')    return '<span class="badge b-ok">Đã thanh toán</span>';
-  if (val==='PARTIAL') return '<span class="badge b-warn">Thanh toán một phần</span>';
-  if (val==='UNPAID')  return '<span class="badge b-err">Chưa thanh toán</span>';
-  return '<span class="badge b-err">Chưa thanh toán</span>';
+  if (val==='PAID')    return '<span class="badge b-ok">Paid</span>';
+  if (val==='PARTIAL') return '<span class="badge b-warn">Partial Payment</span>';
+  if (val==='UNPAID')  return '<span class="badge b-err">Unpaid</span>';
+  return '<span class="badge b-grey">—</span>';
 }
 
 function toggleDetail(btn) {
   const detail = btn.closest('.shipment-card').querySelector('.sc-detail');
   const open   = detail.classList.toggle('open');
-  btn.textContent = open ? 'Thu gọn ▴' : 'Chi tiết ▾';
+  btn.textContent = open ? 'Less ▴' : 'More details ▾';
 }
 
 // ── CHATBOT ───────────────────────────────────────────────────────────────
@@ -405,17 +381,17 @@ function sendChat() {
   const typing = appendMsg('…', 'bot');
   document.getElementById('chatSend').disabled = true;
 
-  // For now: simple local response. Will connect to Apps Script + Claude API.
   setTimeout(() => {
-    const q = msg.toLowerCase();
-    let reply = 'Vui lòng nhập BL# vào ô tìm kiếm ở trên để tra cứu lô hàng của bạn. 🔍';
-    const found = SHIPMENTS.find(s => msg.toUpperCase().includes(s.mbl));
-    if (found) {
-      reply = `Lô hàng ${found.mbl}:\n📅 ETD: ${found.etd} → ETA: ${found.eta}\n🚢 ${found.vessel}\n📧 AN: ${found.anSent==='YES'?'Đã gửi':'Chưa gửi'}\n💳 Thanh toán: ${found.payment}\n🏭 Kho: ${found.warehouse}`;
-    } else if (q.includes('an') || q.includes('arrival notice')) {
-      reply = 'AN (Arrival Notice) sẽ được gửi email khi tàu cập cảng. Vui lòng nhập BL# để kiểm tra trạng thái AN của lô hàng bạn.';
-    } else if (q.includes('payment') || q.includes('thanh toán')) {
-      reply = 'Để kiểm tra tình trạng thanh toán, vui lòng nhập BL# của lô hàng vào ô tìm kiếm.';
+    const q = msg.toUpperCase();
+    let reply = 'Please enter your BL number in the search box above to track your shipment. 🔍';
+    const blMatch = BL_LIST.find(b => q.includes(b.bl.toUpperCase()) || q.includes(b.ref.toUpperCase()));
+    if (blMatch) {
+      const s = { ...SHIPMENTS[blMatch.ref], ...blMatch };
+      reply = `BL ${s.bl}:\n📅 ETD: ${s.etd} → ETA: ${s.eta}\n🚢 ${s.vessel}\n📧 AN: ${s.an==='SENT'?'Sent':'Not yet sent'}\n💳 Payment: ${s.payment||'—'}\n🏭 Warehouse: ${s.warehouse||'Pending'}\n📄 EDO: ${s.edo||'—'}`;
+    } else if (q.includes('AN') || q.includes('ARRIVAL')) {
+      reply = 'AN (Arrival Notice) is sent when the vessel arrives at port. Search your BL number to check the AN status.';
+    } else if (q.includes('PAYMENT') || q.includes('PAID')) {
+      reply = 'To check payment status, please enter your BL number in the search box above.';
     }
     typing.style.whiteSpace = 'pre-line';
     typing.textContent = reply;
