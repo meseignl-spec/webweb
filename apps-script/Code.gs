@@ -6,8 +6,8 @@
 // ═══════════════════════════════════════════════════════════════════════════
 
 const SHEET_ID   = '1PXWF8t-8OIiBleTfgG7PrVyPJ5uqMsPk-5nTMvejKSo';
-const TAB_MAIN   = 'Sheet1';  // main tracking tab name — change if different
-const TAB_BL     = 'Sheet1';  // REF/BL mapping is on the same sheet (second table)
+const TAB_MAIN   = 'Status';  // main tracking tab
+const TAB_BL     = 'HBL';    // BL/REF mapping tab
 
 // ── Column positions in Sheet1 — Shipment table (1-indexed) ───────────────
 // Row 1-2 = merged headers, Row 3 = sub-headers, data from Row 4
@@ -58,11 +58,14 @@ function handleSearch(p) {
   const blQuery = String(p.bl || '').trim().toUpperCase();
   if (!blQuery) return { success: false, message: 'BL number required.' };
 
-  const ss      = SpreadsheetApp.openById(SHEET_ID);
-  const sh      = ss.getSheetByName(TAB_MAIN);
-  if (!sh) return { success: false, message: 'Sheet not found.' };
+  const ss       = SpreadsheetApp.openById(SHEET_ID);
+  const shMain   = ss.getSheetByName(TAB_MAIN);
+  const shBL     = ss.getSheetByName(TAB_BL);
+  if (!shMain) return { success: false, message: 'Status sheet not found.' };
+  if (!shBL)   return { success: false, message: 'HBL sheet not found.' };
 
-  const allData = sh.getDataRange().getValues();
+  const allData  = shMain.getDataRange().getValues();
+  const blData   = shBL.getDataRange().getValues();
 
   // ── Build shipment map (keyed by MBL, data rows start after row 3) ──
   const shipments = {};
@@ -101,27 +104,24 @@ function handleSearch(p) {
     };
   }
 
-  // ── Build BL list with per-BL payment/warehouse/EDO (Table 2) ──
-  // Table 2 columns: A=REF, B=BL, C=customer payment status, D=warehouse status, E=EDO
+  // ── Build BL list from HBL tab ──
+  // Columns: A=REF, B=BL, C=container, D=payment, E=warehouse, F=EDO
   const blList = [];
-  let inBlTable = false;
-  let lastRef   = '';
-  for (let i = 0; i < allData.length; i++) {
-    const row  = allData[i];
+  let lastRef  = '';
+  for (let i = 0; i < blData.length; i++) {
+    const row  = blData[i];
     const colA = String(row[0]).trim();
     const colB = String(row[1]).trim();
-    if (colA.toUpperCase() === 'REF') { inBlTable = true; continue; }
-    if (!inBlTable) continue;
+    if (colA.toUpperCase() === 'REF') continue; // skip header
     if (!colB) continue;
-    // REF column may be blank for subsequent BL rows (merged cell)
     if (colA) lastRef = colA.toUpperCase();
     blList.push({
       ref      : lastRef,
       bl       : colB,
-      container: String(row[2] || '').trim(),  // C – container no
-      payment  : String(row[3] || '').trim(),  // D – local charge payment status
-      warehouse: String(row[4] || '').trim(),  // E – warehouse status
-      edo      : String(row[5] || '').trim(),  // F – EDO
+      container: String(row[2] || '').trim(),
+      payment  : String(row[3] || '').trim(),
+      warehouse: String(row[4] || '').trim(),
+      edo      : String(row[5] || '').trim(),
     });
   }
 
