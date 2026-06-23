@@ -3,96 +3,248 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shipment Tracking Portal</title>
-  <link rel="stylesheet" href="css/login.css" />
+  <title>Shipment Tracking — ImportTrack</title>
+  <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <div class="login-bg">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="10" fill="#1a56db"/>
-          <path d="M8 28L14 16L20 22L26 12L32 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="32" cy="20" r="3" fill="#60a5fa"/>
-        </svg>
-        <span class="login-brand">ImportTrack</span>
-      </div>
 
-      <h1 class="login-title">Shipment Tracking</h1>
-      <p class="login-sub">Enter your credentials to track your shipments</p>
+<nav class="topnav">
+  <div class="topnav-inner">
+    <div class="nav-brand">
+      <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
+        <rect width="40" height="40" rx="10" fill="#1a56db"/>
+        <path d="M8 28L14 16L20 22L26 12L32 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="20" r="3" fill="#60a5fa"/>
+      </svg>
+      <span>ImportTrack</span>
+    </div>
+    <div class="nav-right">
+      <span class="nav-name">USG Company</span>
+      <button class="btn-logout">Sign Out</button>
+    </div>
+  </div>
+</nav>
 
-      <form id="loginForm" class="login-form" autocomplete="off">
-        <div class="field-group">
-          <label for="email">Email / Customer Code</label>
-          <input type="text" id="email" placeholder="your@email.com" required autocomplete="username" />
-        </div>
-        <div class="field-group">
-          <label for="pin">PIN / Password</label>
-          <input type="password" id="pin" placeholder="••••••" required autocomplete="current-password" />
-        </div>
-        <div id="loginError" class="login-error hidden">Invalid credentials. Please try again.</div>
-        <button type="submit" class="btn-login" id="loginBtn">
-          <span id="loginBtnText">Sign In</span>
-          <svg id="loginSpinner" class="spinner hidden" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="white" stroke-width="3" stroke-dasharray="31.4" stroke-dashoffset="10"/>
-          </svg>
-        </button>
-      </form>
+<main class="main-content">
+  <div class="page-header">
+    <h1>My Shipments</h1>
+    <p>4 shipments linked to your account</p>
+  </div>
 
-      <p class="login-contact">
-        Need access? Contact your import coordinator.
-      </p>
+  <div class="summary-row">
+    <div class="summary-card">
+      <div class="s-label">Total Shipments</div>
+      <div class="s-value">4</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">In Transit</div>
+      <div class="s-value">2</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">Arrived</div>
+      <div class="s-value">2</div>
+    </div>
+    <div class="summary-card">
+      <div class="s-label">Payment Due</div>
+      <div class="s-value" style="color:#ef4444">2 pending</div>
     </div>
   </div>
 
-  <script src="js/config.js"></script>
-  <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim();
-      const pin = document.getElementById('pin').value.trim();
-      const btn = document.getElementById('loginBtn');
-      const btnText = document.getElementById('loginBtnText');
-      const spinner = document.getElementById('loginSpinner');
-      const errorEl = document.getElementById('loginError');
+  <div class="card">
+    <div class="card-header">
+      <h2>Shipment List</h2>
+      <button class="btn-refresh">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M1 4v6h6M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+    <div class="table-wrapper">
+      <table class="shipment-table">
+        <thead>
+          <tr>
+            <th>BL / Booking</th>
+            <th>Type / Agent</th>
+            <th>Vessel / Voyage</th>
+            <th>ETD</th>
+            <th>ETA</th>
+            <th>AN Sent</th>
+            <th>Payment</th>
+            <th>Warehouse</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="ship-row" onclick="openDetail(0)">
+            <td><strong>YMJAI450539435</strong><br><span class="sub">HBL-001</span></td>
+            <td><span class="badge badge-type">CONSOL</span><br><span class="sub">USG</span></td>
+            <td class="small">YM HEIGHTS 423N</td>
+            <td class="date-cell">23/06/2026</td>
+            <td class="date-cell">28/06/2026</td>
+            <td><span class="badge badge-ok">Sent</span></td>
+            <td><span class="badge badge-ok">Paid</span></td>
+            <td><span class="badge badge-blue">Arrived</span></td>
+            <td><button class="btn-detail">View →</button></td>
+          </tr>
+          <tr class="ship-row" onclick="openDetail(1)">
+            <td><strong>CFPS26002026</strong><br><span class="sub">—</span></td>
+            <td><span class="badge badge-type">LCL</span><br><span class="sub">FPS</span></td>
+            <td class="small">YM HEIGHTS 423N</td>
+            <td class="date-cell">23/06/2026</td>
+            <td class="date-cell">28/06/2026</td>
+            <td><span class="badge badge-warn">Not sent</span></td>
+            <td><span class="badge badge-err">Unpaid</span></td>
+            <td><span class="badge badge-neutral">Pending</span></td>
+            <td><button class="btn-detail">View →</button></td>
+          </tr>
+          <tr class="ship-row" onclick="openDetail(2)">
+            <td><strong>757610372538</strong><br><span class="sub">HBL-SHANGHONG</span></td>
+            <td><span class="badge badge-type">CONSOL</span><br><span class="sub">SHANGHONG</span></td>
+            <td class="small">ZHONG GU DI ZHONG HAI V.625S</td>
+            <td class="date-cell">21/06/2026</td>
+            <td class="date-cell">25/06/2026</td>
+            <td><span class="badge badge-ok">Sent</span></td>
+            <td><span class="badge badge-warn">Partial</span></td>
+            <td><span class="badge badge-warn">Unstuffed</span></td>
+            <td><button class="btn-detail">View →</button></td>
+          </tr>
+          <tr class="ship-row" onclick="openDetail(3)">
+            <td><strong>SITLSHHPA86729</strong><br><span class="sub">HBL-VAST</span></td>
+            <td><span class="badge badge-type">CONSOL</span><br><span class="sub">VAST</span></td>
+            <td class="small">SITC QINGDAO V.2616S</td>
+            <td class="date-cell">22/06/2026</td>
+            <td class="date-cell">26/06/2026</td>
+            <td><span class="badge badge-ok">Sent</span></td>
+            <td><span class="badge badge-ok">Paid</span></td>
+            <td><span class="badge badge-ok">Ready for pickup</span></td>
+            <td><button class="btn-detail">View →</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
 
-      errorEl.classList.add('hidden');
-      btnText.textContent = 'Signing in…';
-      spinner.classList.remove('hidden');
-      btn.disabled = true;
+<!-- DETAIL MODAL -->
+<div id="detailModal" class="modal-overlay hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h2 class="modal-title">Shipment Detail</h2>
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h3>Booking Info</h3>
+        <dl>
+          <dt>MBL #</dt>      <dd>YMJAI450539435</dd>
+          <dt>Final HBL</dt>  <dd>HBL-001</dd>
+          <dt>Type</dt>       <dd>CONSOL</dd>
+          <dt>Agent</dt>      <dd>USG</dd>
+          <dt>Vessel/Voyage</dt><dd>YM HEIGHTS 423N</dd>
+        </dl>
+      </div>
+      <div class="detail-section">
+        <h3>Schedule</h3>
+        <dl>
+          <dt>ETD</dt>  <dd class="big-date">23/06/2026</dd>
+          <dt>ETA</dt>  <dd class="big-date">28/06/2026</dd>
+        </dl>
+        <div class="timeline">
+          <div class="t-step done"><div class="t-dot"></div><div class="t-label">Departed</div></div>
+          <div class="t-step done"><div class="t-dot"></div><div class="t-label">In Transit</div></div>
+          <div class="t-step done"><div class="t-dot"></div><div class="t-label">Arrived at Warehouse</div></div>
+          <div class="t-step"><div class="t-dot"></div><div class="t-label">Unstuffed</div></div>
+          <div class="t-step"><div class="t-dot"></div><div class="t-label">Ready for Pickup</div></div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <h3>Customs &amp; Docs</h3>
+        <dl>
+          <dt>MNF ✓</dt>     <dd>X</dd>
+          <dt>Check MNF</dt> <dd>—</dd>
+          <dt>PQ</dt>        <dd>X</dd>
+        </dl>
+      </div>
+      <div class="detail-section">
+        <h3>Arrival Notice</h3>
+        <dl>
+          <dt>AN Status</dt> <dd><span class="badge badge-ok">Sent</span></dd>
+          <dt>Sent to</dt>
+          <dd>
+            <ul class="email-list">
+              <li>client@usg.com</li>
+              <li>manager@usg.com</li>
+            </ul>
+          </dd>
+        </dl>
+      </div>
+      <div class="detail-section">
+        <h3>Payment</h3>
+        <dl>
+          <dt>Status</dt> <dd><span class="badge badge-ok">Paid</span></dd>
+        </dl>
+      </div>
+      <div class="detail-section">
+        <h3>Warehouse</h3>
+        <dl>
+          <dt>Status</dt> <dd><span class="badge badge-blue">Arrived</span></dd>
+        </dl>
+      </div>
+    </div>
+    <div class="detail-note"><strong>Note:</strong> CÓ AN/ DL 17H 26/6</div>
+  </div>
+</div>
 
-      try {
-        const url = window.APPS_SCRIPT_URL;
-        if (!url || url === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
-          throw new Error('NO_URL');
-        }
+<!-- CHATBOT -->
+<div class="chat-widget">
+  <button class="chat-toggle" id="chatToggle" onclick="toggleChat()">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </button>
 
-        const res = await fetch(`${url}?action=login&email=${encodeURIComponent(email)}&pin=${encodeURIComponent(pin)}`);
-        const data = await res.json();
+  <div class="chat-panel hidden" id="chatPanel">
+    <div class="chat-head">
+      <div class="chat-head-info">
+        <div class="chat-avatar">AI</div>
+        <div>
+          <div class="chat-head-name">Import Assistant</div>
+          <div class="chat-head-sub">Ask about your shipments</div>
+        </div>
+      </div>
+      <button class="chat-close-btn" onclick="toggleChat()">✕</button>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg bot">
+        <div class="msg-bubble">Xin chào! 👋 Tôi có thể giúp bạn kiểm tra trạng thái lô hàng, thanh toán, AN, kho bãi.<br><br>Thử hỏi:<br>• "Container của tôi đang ở đâu?"<br>• "AN đã được gửi chưa?"<br>• "Khi nào hàng về?"</div>
+      </div>
+      <div class="msg user">
+        <div class="msg-bubble">Container YMJAI450539435 đang ở đâu?</div>
+      </div>
+      <div class="msg bot">
+        <div class="msg-bubble">Container <strong>YMJAI450539435</strong> của bạn đã <strong>đến kho</strong> (Arrived). 🎉<br><br>📅 ETD: 23/06/2026 → ETA: 28/06/2026<br>🚢 Tàu: YM HEIGHTS 423N<br>📧 AN đã gửi đến: client@usg.com, manager@usg.com<br>💳 Thanh toán: Đã thanh toán ✓<br><br>Hàng đang chờ unstuff tại kho.</div>
+      </div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" class="chat-input" placeholder="Hỏi về lô hàng của bạn…" />
+      <button class="chat-send">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
 
-        if (data.success) {
-          sessionStorage.setItem('customer', JSON.stringify(data.customer));
-          window.location.href = 'dashboard.html';
-        } else {
-          errorEl.textContent = data.message || 'Invalid credentials. Please try again.';
-          errorEl.classList.remove('hidden');
-        }
-      } catch (err) {
-        if (err.message === 'NO_URL') {
-          errorEl.textContent = 'Portal not configured yet. Ask your coordinator to set up the Apps Script URL.';
-        } else {
-          errorEl.textContent = 'Connection error. Please try again.';
-          console.error(err);
-        }
-        errorEl.classList.remove('hidden');
-      } finally {
-        btnText.textContent = 'Sign In';
-        spinner.classList.add('hidden');
-        btn.disabled = false;
-      }
-    });
-  </script>
+<script>
+function openDetail(i) { document.getElementById('detailModal').classList.remove('hidden'); }
+function closeModal()   { document.getElementById('detailModal').classList.add('hidden'); }
+function toggleChat() {
+  document.getElementById('chatPanel').classList.toggle('hidden');
+}
+</script>
 </body>
 </html>
