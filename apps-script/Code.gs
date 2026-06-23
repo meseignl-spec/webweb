@@ -120,9 +120,10 @@ function handleSearch(p) {
     blList.push({
       ref      : lastRef,
       bl       : colB,
-      payment  : String(row[2] || '').trim(),
-      warehouse: String(row[3] || '').trim(),
-      edo      : String(row[4] || '').trim(),
+      container: String(row[2] || '').trim(),  // C – container no
+      payment  : String(row[3] || '').trim(),  // D – local charge payment status
+      warehouse: String(row[4] || '').trim(),  // E – warehouse status
+      edo      : String(row[5] || '').trim(),  // F – EDO
     });
   }
 
