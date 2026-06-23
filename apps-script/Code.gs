@@ -38,9 +38,7 @@ const C = {
 
 // ── CORS ──────────────────────────────────────────────────────────────────
 function cors(output) {
-  return output
-    .setMimeType(ContentService.MimeType.JSON)
-    .addHeader('Access-Control-Allow-Origin', '*');
+  return output.setMimeType(ContentService.MimeType.JSON);
 }
 
 function doGet(e) {
