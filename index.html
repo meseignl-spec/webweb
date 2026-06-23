@@ -79,11 +79,13 @@
     .b-blue { background: #052e1a; color: #6ee7b7; } .b-blue::before { background: #6ee7b7; }
     .b-grey { background: #151f15; color: #5a7a5e; border: 1px solid var(--border); } .b-grey::before { background: #5a7a5e; }
 
-    /* EMPTY */
+    /* EMPTY / LOADING */
     .empty { text-align: center; padding: 64px 24px; }
     .empty svg { margin-bottom: 16px; opacity: 0.18; color: var(--green); }
     .empty h3 { font-size: 1rem; color: var(--text); margin-bottom: 6px; }
     .empty p  { font-size: 0.85rem; color: var(--muted); }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--green-hl); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* CHATBOT */
     .chat-widget { position: fixed; bottom: 24px; right: 24px; z-index: 400; }
@@ -207,52 +209,55 @@
 </footer>
 
 <script>
-// ── Table 1: Shipment info keyed by REF/MBL ──────────────────────────────
-const SHIPMENTS = {
-  'YMJAI450539435': { etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              an:'SENT'    },
-  'CFPS26002026':   { etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              an:'SENT'    },
-  'YMJAI450539461': { etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',              an:'NOT YET' },
-  'YMJAI202650913': { etd:'22/06/2026', eta:'25/06/2026', vessel:'ANBIEN BAY 2606S',             an:'NOT YET' },
-  '757610372538':   { etd:'21/06/2026', eta:'25/06/2026', vessel:'ZHONG GU DI ZHONG HAI V.625S', an:'NOT YET' },
-  'SITLSHHPA86729': { etd:'22/06/2026', eta:'26/06/2026', vessel:'SITC QINGDAO V.2616S',         an:'SENT'    },
-};
+// ── PASTE YOUR APPS SCRIPT URL HERE ──────────────────────────────────────
+const API_URL = 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE';
+// ─────────────────────────────────────────────────────────────────────────
 
-// ── Table 2: per-BL data (container no, payment, warehouse, EDO) ──────────
-const BL_LIST = [
-  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 01', container:'SITLSHHP', payment:'PAID', warehouse:'',                    edo:'NOT YET'  },
-  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 02', container:'SITLSHHP', payment:'PAID', warehouse:'PICKED UP',           edo:'RELEASED' },
-  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 03', container:'SITLSHHP', payment:'PAID', warehouse:'WAITING FOR PICK UP', edo:'RELEASED' },
-  { ref:'YMJAI450539435', bl:'YMJAI450539435 - 04', container:'SITLSHHP', payment:'',     warehouse:'',                    edo:''         },
-  { ref:'SITLSHHPA86729', bl:'SITLSHHPA867290001',  container:'',         payment:'',     warehouse:'',                    edo:''         },
-];
+// last search results — used by chatbot
+let lastResults = [];
 
-// ── SEARCH ────────────────────────────────────────────────────────────────
 document.getElementById('searchInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') doSearch();
 });
 
-function doSearch() {
+async function doSearch() {
   const raw = document.getElementById('searchInput').value.trim();
-  const q   = raw.toUpperCase();
-  if (!q) return;
+  if (!raw) return;
 
-  let matches = BL_LIST.filter(b => b.bl.toUpperCase() === q);
-  if (!matches.length) matches = BL_LIST.filter(b =>
-    b.bl.toUpperCase().includes(q) ||
-    b.ref.toUpperCase().includes(q) ||
-    (b.container && b.container.toUpperCase().includes(q))
-  );
-
-  const results = matches.map(b => ({ ...SHIPMENTS[b.ref], ...b })).filter(r => r.etd);
-
+  // show loading
   document.getElementById('defaultState').style.display = 'none';
   document.getElementById('resultArea').style.display   = 'block';
-  document.getElementById('resultCount').textContent    = `${results.length} result${results.length !== 1 ? 's' : ''} found`;
-  document.getElementById('resultList').innerHTML       = results.length
-    ? results.map(s => renderCard(s)).join('')
-    : `<div class="empty"><h3>No shipment found for "<strong>${raw}</strong>"</h3><p>Please check your BL number or contact WeDo Forwarding.</p></div>`;
+  document.getElementById('resultCount').textContent    = 'Searching…';
+  document.getElementById('resultList').innerHTML       =
+    '<div class="empty"><div class="spinner"></div><p>Fetching from Google Sheet…</p></div>';
+
+  if (!API_URL || API_URL.includes('YOUR_APPS')) {
+    document.getElementById('resultCount').textContent = 'Not configured';
+    document.getElementById('resultList').innerHTML =
+      '<div class="empty"><h3>API not configured</h3><p>Please set up Apps Script and paste the URL into the website.</p></div>';
+    return;
+  }
+
+  try {
+    const res  = await fetch(`${API_URL}?action=search&bl=${encodeURIComponent(raw)}`);
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.message || 'Unknown error');
+
+    lastResults = data.results || [];
+    document.getElementById('resultCount').textContent =
+      `${lastResults.length} result${lastResults.length !== 1 ? 's' : ''} found`;
+    document.getElementById('resultList').innerHTML = lastResults.length
+      ? lastResults.map(s => renderCard(s)).join('')
+      : `<div class="empty"><h3>No shipment found for "<strong>${raw}</strong>"</h3><p>Please check your BL number or contact WeDo Forwarding.</p></div>`;
+  } catch (err) {
+    document.getElementById('resultCount').textContent = 'Error';
+    document.getElementById('resultList').innerHTML =
+      `<div class="empty"><h3>Could not load data</h3><p>${err.message}</p></div>`;
+  }
 }
 
+// ── RENDER ────────────────────────────────────────────────────────────────
 function warehouseBadge(w) {
   const v = String(w || '').toUpperCase();
   if (v.includes('PICKED UP')) return ['b-ok',  'Picked Up'];
@@ -262,54 +267,12 @@ function warehouseBadge(w) {
   if (v === 'READY')           return ['b-ok',   'Ready for Pick Up'];
   return ['b-grey', w || 'Pending'];
 }
-
 function edoBadge(e) {
   const v = String(e || '').toUpperCase();
   if (v === 'RELEASED')  return '<span class="badge b-ok">EDO: Released</span>';
   if (v === 'NOT YET')   return '<span class="badge b-err">EDO: Not Yet</span>';
   if (v === 'REQUESTED') return '<span class="badge b-warn">EDO: Requested</span>';
   return '<span class="badge b-grey">EDO: —</span>';
-}
-
-function renderCard(s) {
-  const [whCls, whLabel] = warehouseBadge(s.warehouse);
-  const warrived = ['ARRIVED','UNSTUFFED','READY','WAITING','PICKED'].some(v => String(s.warehouse||'').toUpperCase().startsWith(v));
-  const wpickedup = String(s.warehouse||'').toUpperCase().includes('PICKED UP');
-
-  return `
-  <div class="shipment-card">
-    <div class="sc-top">
-      <div>
-        <div class="sc-bl">BL: ${s.bl}</div>
-        <div class="sc-sub">REF: ${s.ref}${s.container ? ' &nbsp;·&nbsp; Container: <strong>' + s.container + '</strong>' : ''}</div>
-      </div>
-      <div class="sc-badges">
-        ${anBadge(s.an)}
-        ${payBadge(s.payment)}
-        <span class="badge ${whCls}">${whLabel}</span>
-        ${edoBadge(s.edo)}
-      </div>
-    </div>
-
-    <div class="sc-grid">
-      <div class="sc-cell"><div class="sc-label">ETD</div><div class="sc-value">${s.etd||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">ETA</div><div class="sc-value">${s.eta||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">AN Status</div><div class="sc-value">${String(s.an||'').toUpperCase()==='SENT'?'✓ Sent':'Not yet sent'}</div></div>
-      <div class="sc-cell"><div class="sc-label">Local Charge Payment</div><div class="sc-value">${s.payment||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">Container No.</div><div class="sc-value">${s.container||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">Warehouse Status</div><div class="sc-value">${whLabel}</div></div>
-    </div>
-
-    <div class="sc-footer">
-      <span class="sc-vessel">🚢 <strong>${s.vessel||'—'}</strong></span>
-    </div>
-
-    <div class="sc-detail" style="display:none"></div>
-  </div>`;
-}
-
-function tStep(label, done) {
-  return `<div class="t-step ${done?'done':''}"><div class="t-dot"></div><div class="t-lbl">${label}</div></div>`;
 }
 function anBadge(v) {
   return String(v||'').toUpperCase()==='SENT'
@@ -324,17 +287,41 @@ function payBadge(v) {
   return '<span class="badge b-grey">—</span>';
 }
 
-function toggleDetail(btn) {
-  const detail = btn.closest('.shipment-card').querySelector('.sc-detail');
-  const open   = detail.classList.toggle('open');
-  btn.textContent = open ? 'Shipment Progress ▴' : 'Shipment Progress ▾';
+function renderCard(s) {
+  const [whCls, whLabel] = warehouseBadge(s.warehouse);
+  return `
+  <div class="shipment-card">
+    <div class="sc-top">
+      <div>
+        <div class="sc-bl">BL: ${s.bl}</div>
+        <div class="sc-sub">REF: ${s.ref}${s.container ? ' &nbsp;·&nbsp; Container: <strong>' + s.container + '</strong>' : ''}</div>
+      </div>
+      <div class="sc-badges">
+        ${anBadge(s.an)}
+        ${payBadge(s.payment)}
+        <span class="badge ${whCls}">${whLabel}</span>
+        ${edoBadge(s.edo)}
+      </div>
+    </div>
+    <div class="sc-grid">
+      <div class="sc-cell"><div class="sc-label">ETD</div><div class="sc-value">${s.etd||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">ETA</div><div class="sc-value">${s.eta||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">AN Status</div><div class="sc-value">${String(s.an||'').toUpperCase()==='SENT'?'✓ Sent':'Not yet sent'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Local Charge Payment</div><div class="sc-value">${s.payment||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Container No.</div><div class="sc-value">${s.container||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Warehouse Status</div><div class="sc-value">${whLabel}</div></div>
+    </div>
+    <div class="sc-footer">
+      <span class="sc-vessel">🚢 <strong>${s.vessel||'—'}</strong></span>
+    </div>
+  </div>`;
 }
 
 // ── CHATBOT ───────────────────────────────────────────────────────────────
 function toggleChat() { document.getElementById('chatPanel').classList.toggle('hidden'); }
 document.getElementById('chatInput').addEventListener('keydown', e => { if (e.key==='Enter') sendChat(); });
 
-function sendChat() {
+async function sendChat() {
   const input = document.getElementById('chatInput');
   const msg   = input.value.trim();
   if (!msg) return;
@@ -343,22 +330,21 @@ function sendChat() {
   const typing = appendMsg('…', 'bot');
   document.getElementById('chatSend').disabled = true;
 
-  setTimeout(() => {
-    const q = msg.toUpperCase();
-    let reply = 'Please enter your BL number in the search box above to track your shipment. 🔍';
-    const blMatch = BL_LIST.find(b => q.includes(b.bl.toUpperCase()) || q.includes(b.ref.toUpperCase()));
-    if (blMatch) {
-      const s = { ...SHIPMENTS[blMatch.ref], ...blMatch };
-      reply = `BL ${s.bl}:\n📅 ETD: ${s.etd} → ETA: ${s.eta}\n🚢 ${s.vessel}\n📧 AN: ${s.an==='SENT'?'Sent':'Not yet sent'}\n💳 Payment: ${s.payment||'—'}\n🏭 Warehouse: ${s.warehouse||'Pending'}\n📄 EDO: ${s.edo||'—'}`;
-    } else if (q.includes('AN') || q.includes('ARRIVAL')) {
-      reply = 'AN (Arrival Notice) is sent when the vessel arrives at port. Search your BL number to check the AN status.';
-    } else if (q.includes('PAYMENT') || q.includes('PAID')) {
-      reply = 'To check payment status, please enter your BL number in the search box above.';
-    }
-    typing.style.whiteSpace = 'pre-line';
-    typing.textContent = reply;
+  if (!API_URL || API_URL.includes('YOUR_APPS')) {
+    typing.textContent = 'Chatbot not configured yet. Please set up the Apps Script URL.';
     document.getElementById('chatSend').disabled = false;
-  }, 800);
+    return;
+  }
+
+  try {
+    const bl  = lastResults.length ? lastResults[0].bl : '';
+    const res  = await fetch(`${API_URL}?action=chat&bl=${encodeURIComponent(bl)}&message=${encodeURIComponent(msg)}`);
+    const data = await res.json();
+    typing.textContent = data.reply || 'Sorry, I could not get a response. Please try again.';
+  } catch (err) {
+    typing.textContent = 'Connection error. Please try again.';
+  }
+  document.getElementById('chatSend').disabled = false;
 }
 
 function appendMsg(text, role) {
