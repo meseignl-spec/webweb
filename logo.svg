@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 230" fill="none">
+  <g fill="#0d5c2a">
+
+    <!-- LEFT WING - 3 feather stripes, sweeping outward left -->
+    <!-- Top stripe -->
+    <path d="M10,60 C60,30 140,38 210,85 L205,100 C132,54 56,46 8,76 Z"/>
+    <!-- Middle stripe -->
+    <path d="M5,90 C55,58 145,64 218,112 L213,127 C138,80 50,74 3,106 Z"/>
+    <!-- Bottom stripe -->
+    <path d="M14,120 C62,90 152,94 222,138 L217,153 C144,110 58,106 10,136 Z"/>
+
+    <!-- RIGHT WING - 3 feather stripes, sweeping outward right -->
+    <!-- Top stripe -->
+    <path d="M590,60 C540,30 460,38 390,85 L395,100 C468,54 544,46 592,76 Z"/>
+    <!-- Middle stripe -->
+    <path d="M595,90 C545,58 455,64 382,112 L387,127 C462,80 550,74 597,106 Z"/>
+    <!-- Bottom stripe -->
+    <path d="M586,120 C538,90 448,94 378,138 L383,153 C456,110 542,106 590,136 Z"/>
+
+    <!-- W BODY SHAPE -->
+    <!-- Left arm of W coming down from left wing -->
+    <path d="M215,90 C230,105 245,130 248,165 L232,165 C228,132 214,107 200,95 Z"/>
+    <!-- Left valley of W going down to center bottom -->
+    <path d="M248,165 C258,185 275,200 300,205 C325,200 342,185 352,165 L336,165 C327,182 315,194 300,198 C285,194 273,182 264,165 Z"/>
+    <!-- Right arm of W coming down from right wing -->
+    <path d="M385,90 C370,105 355,130 352,165 L368,165 C372,132 386,107 400,95 Z"/>
+
+    <!-- Filled W shape solid center -->
+    <path d="M208,88 L222,95 C218,102 240,160 248,170 C258,190 278,202 300,206 C322,202 342,190 352,170 C360,160 382,102 378,95 L392,88 C388,96 364,158 356,172 C344,194 324,210 300,214 C276,210 256,194 244,172 C236,158 212,96 208,88 Z"/>
+
+    <!-- OWL HEAD -->
+    <ellipse cx="300" cy="74" rx="46" ry="52"/>
+
+    <!-- Eye whites -->
+    <circle cx="281" cy="72" r="19" fill="white"/>
+    <circle cx="319" cy="72" r="19" fill="white"/>
+
+    <!-- Pupils (dark green) -->
+    <circle cx="281" cy="72" r="12" fill="#0d5c2a"/>
+    <circle cx="319" cy="72" r="12" fill="#0d5c2a"/>
+
+    <!-- Eye shine highlights -->
+    <circle cx="286" cy="66" r="5" fill="white"/>
+    <circle cx="324" cy="66" r="5" fill="white"/>
+
+    <!-- Eye ring (outline) -->
+    <circle cx="281" cy="72" r="19" fill="none" stroke="#0d5c2a" stroke-width="3"/>
+    <circle cx="319" cy="72" r="19" fill="none" stroke="#0d5c2a" stroke-width="3"/>
+
+    <!-- Beak -->
+    <path d="M295,88 C295,88 300,98 305,88 Z" fill="#0d5c2a"/>
+
+    <!-- Ear tufts -->
+    <path d="M272,34 C268,22 258,14 262,28 C265,18 276,22 278,36 Z"/>
+    <path d="M328,34 C332,22 342,14 338,28 C335,18 324,22 322,36 Z"/>
+
+    <!-- Forehead/face detail - lighter separation between eyes -->
+    <path d="M294,68 C296,64 304,64 306,68" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+
+  </g>
+</svg>
