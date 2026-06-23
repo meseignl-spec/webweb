@@ -237,15 +237,24 @@
 </div>
 
 <script>
-// ── MOCK DATA (replace with Apps Script fetch when sheet is connected) ──────
-const SHIPMENTS = [
-  { type:'CONSOL', agent:'USG',      etd:'23/06/2026', eta:'28/06/2026', mbl:'YMJAI450539435', finalHbl:'HBL-001',       note:'CÓ AN/ DL 17H 26/6',  vessel:'YM HEIGHTS 423N',              mnf:'X', pq:'',  anSent:'YES', anEmails:'client@usg.com, manager@usg.com',  payment:'PAID',    warehouse:'ARRIVED'   },
-  { type:'LCL',    agent:'FPS',      etd:'23/06/2026', eta:'28/06/2026', mbl:'CFPS26002026',   finalHbl:'',              note:'CÓ AN/ DL 17H 26/6',  vessel:'YM HEIGHTS 423N',              mnf:'',  pq:'',  anSent:'NO',  anEmails:'',                                payment:'UNPAID',  warehouse:'PENDING'   },
-  { type:'CONSOL', agent:'AIRROW',   etd:'23/06/2026', eta:'28/06/2026', mbl:'YMJAI450539461', finalHbl:'HBL-AIR-001',   note:'CÓ AN/ DL 17H 26/6',  vessel:'YM HEIGHTS 423N',              mnf:'',  pq:'',  anSent:'YES', anEmails:'airrow@logistics.com',             payment:'PARTIAL', warehouse:'PENDING'   },
-  { type:'CONSOL', agent:'dolphin',  etd:'22/06/2026', eta:'25/06/2026', mbl:'YMJAI202650913', finalHbl:'',              note:'QUYEN HANDLE',         vessel:'ANBIEN BAY 2606S',             mnf:'',  pq:'',  anSent:'NO',  anEmails:'',                                payment:'UNPAID',  warehouse:'PENDING'   },
-  { type:'CONSOL', agent:'SHANGHONG',etd:'21/06/2026', eta:'25/06/2026', mbl:'757610372538',   finalHbl:'HBL-SH-001',    note:'done nhap',            vessel:'ZHONG GU DI ZHONG HAI V.625S', mnf:'X', pq:'X', anSent:'YES', anEmails:'contact@shanghong.vn',             payment:'PAID',    warehouse:'UNSTUFFED' },
-  { type:'CONSOL', agent:'VAST',     etd:'22/06/2026', eta:'26/06/2026', mbl:'SITLSHHPA86729', finalHbl:'HBL-VAST-001',  note:'done nhap',            vessel:'SITC QINGDAO V.2616S',         mnf:'X', pq:'X', anSent:'YES', anEmails:'vast@company.vn',                  payment:'PAID',    warehouse:'READY'     },
-];
+// ── DATA từ Google Sheet (REF/BL mapping + Shipment table) ──────────────
+// Table 1: shipments keyed by MBL/REF
+const SHIPMENTS = {
+  'YMJAI450539435': { type:'CONSOL', agent:'USG',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
+  'CFPS26002026':   { type:'LCL',    agent:'FPS',       etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
+  'YMJAI450539461': { type:'CONSOL', agent:'AIRROW',    etd:'23/06/2026', eta:'28/06/2026', vessel:'YM HEIGHTS 423N',               mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'CÓ AN/ DL 17H 26/6'  },
+  'YMJAI202650913': { type:'CONSOL', agent:'dolphin',   etd:'22/06/2026', eta:'25/06/2026', vessel:'ANBIEN BAY 2606S',              mnf:'',  pq:'',  an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:'QUYEN HANDLE'         },
+  '757610372538':   { type:'CONSOL', agent:'SHANGHONG', etd:'21/06/2026', eta:'25/06/2026', vessel:'ZHONG GU DI ZHONG HAI V.625S',  mnf:'X', pq:'X', an:'',     invPaid:'', edo:'', kho:'',        dnAgent:'', khPaid:'',     tonKho:'', note:''                     },
+  'SITLSHHPA86729': { type:'CONSOL', agent:'VAST',      etd:'22/06/2026', eta:'26/06/2026', vessel:'SITC QINGDAO V.2616S',          mnf:'X', pq:'X', an:'SENT', invPaid:'', edo:'', kho:'ARRIVED', dnAgent:'', khPaid:'PAID', tonKho:'WAITING FOR PICK UP', note:'done nhap' },
+};
+
+// Table 2: BL → REF lookup
+const BL_MAP = {
+  'YMJAI450539435 - 01': 'YMJAI450539435',
+  'YMJAI450539435 - 02': 'YMJAI450539435',
+  'YMJAI450539435 - 03': 'YMJAI450539435',
+  'YMJAI450539435 - 04': 'YMJAI450539435',
+};
 
 // ── SEARCH ────────────────────────────────────────────────────────────────
 document.getElementById('searchInput').addEventListener('keydown', e => {
@@ -253,78 +262,107 @@ document.getElementById('searchInput').addEventListener('keydown', e => {
 });
 
 function doSearch() {
-  const q = document.getElementById('searchInput').value.trim().toUpperCase();
+  const raw = document.getElementById('searchInput').value.trim();
+  const q   = raw.toUpperCase();
   if (!q) return;
 
-  const results = SHIPMENTS.filter(s =>
-    s.mbl.toUpperCase().includes(q) ||
-    (s.finalHbl || '').toUpperCase().includes(q)
-  );
+  // 1. Try exact BL match from BL_MAP
+  let results = [];
+  const blKey = Object.keys(BL_MAP).find(k => k.toUpperCase() === q);
+  if (blKey) {
+    const ref = BL_MAP[blKey];
+    const s   = SHIPMENTS[ref];
+    if (s) results = [{ ...s, bl: blKey, ref }];
+  }
+
+  // 2. Fallback: partial match on BL or REF
+  if (!results.length) {
+    // Check BL map partial
+    Object.entries(BL_MAP).forEach(([bl, ref]) => {
+      if (bl.toUpperCase().includes(q)) {
+        const s = SHIPMENTS[ref];
+        if (s && !results.find(r => r.bl === bl)) results.push({ ...s, bl, ref });
+      }
+    });
+    // Check REF direct
+    Object.entries(SHIPMENTS).forEach(([ref, s]) => {
+      if (ref.toUpperCase().includes(q) && !results.find(r => r.ref === ref)) {
+        results.push({ ...s, bl: ref, ref });
+      }
+    });
+  }
 
   document.getElementById('defaultState').style.display = 'none';
   document.getElementById('resultArea').style.display   = 'block';
-  document.getElementById('resultCount').textContent    = `${results.length} found`;
+  document.getElementById('resultCount').textContent    = `${results.length} kết quả`;
   document.getElementById('resultList').innerHTML       = results.length
-    ? results.map((s, i) => renderCard(s, i)).join('')
-    : `<div class="empty"><h3>No shipment found for "${q}"</h3><p>Check the BL# or contact your coordinator.</p></div>`;
+    ? results.map(s => renderCard(s)).join('')
+    : `<div class="empty"><h3>Không tìm thấy BL "<strong>${raw}</strong>"</h3><p>Vui lòng kiểm tra lại số BL hoặc liên hệ WeDo Forwarding.</p></div>`;
 }
 
-function renderCard(s, i) {
-  const wMap = { PENDING:'b-grey', ARRIVED:'b-blue', UNSTUFFED:'b-warn', READY:'b-ok' };
-  const wLbl = { PENDING:'Pending', ARRIVED:'Arrived', UNSTUFFED:'Unstuffed', READY:'Ready for Pickup' };
-  const wh   = String(s.warehouse||'').toUpperCase();
-  const isDone = (step) => {
-    const order = ['PENDING','ARRIVED','UNSTUFFED','READY'];
-    return order.indexOf(wh) >= order.indexOf(step);
+function renderCard(s) {
+  const kho = String(s.kho || '').toUpperCase();
+  const khoMap = {
+    '':        ['b-grey', '— Chưa có thông tin'],
+    'PENDING': ['b-grey', 'Chờ hàng về'],
+    'ARRIVED': ['b-blue', 'Hàng đã về kho'],
+    'UNSTUFFED':['b-warn','Đã rút hàng'],
+    'READY':   ['b-ok',   'Sẵn sàng lấy hàng'],
   };
+  // Also handle freetext like "WAITING FOR PICK UP"
+  let [khoCls, khoLabel] = khoMap[kho] || ['b-warn', s.kho];
+  if (s.tonKho && s.tonKho.toUpperCase().includes('WAITING')) { khoCls = 'b-ok'; khoLabel = 'Sẵn sàng lấy hàng'; }
 
-  const emailChips = s.anEmails
-    ? s.anEmails.split(/[,;]/).map(e => e.trim()).filter(Boolean).map(e => `<span class="email-chip">${e}</span>`).join('')
-    : '—';
+  const order   = ['', 'PENDING', 'ARRIVED', 'UNSTUFFED', 'READY'];
+  const isDone  = (step) => order.indexOf(kho) >= order.indexOf(step);
 
   return `
   <div class="shipment-card">
     <div class="sc-top">
       <div>
-        <div class="sc-bl">${s.mbl}</div>
-        <div class="sc-sub">${s.finalHbl ? 'HBL: ' + s.finalHbl + ' &nbsp;·&nbsp; ' : ''}Agent: ${s.agent} &nbsp;·&nbsp; <span class="badge b-type">${s.type}</span></div>
+        <div class="sc-bl">BL: ${s.bl}</div>
+        <div class="sc-sub">REF: ${s.ref} &nbsp;·&nbsp; Agent: ${s.agent} &nbsp;·&nbsp; <span class="badge b-type">${s.type}</span></div>
       </div>
       <div class="sc-badges">
-        ${anBadge(s.anSent)}
-        ${payBadge(s.payment)}
-        <span class="badge ${wMap[wh]||'b-grey'}">${wLbl[wh]||s.warehouse||'—'}</span>
+        ${anBadge(s.an)}
+        ${payBadge(s.khPaid)}
+        <span class="badge ${khoCls}">${khoLabel}</span>
       </div>
     </div>
 
     <div class="sc-grid">
       <div class="sc-cell"><div class="sc-label">ETD</div><div class="sc-value">${s.etd||'—'}</div></div>
       <div class="sc-cell"><div class="sc-label">ETA</div><div class="sc-value">${s.eta||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">AN Sent</div><div class="sc-value">${s.anSent==='YES'?'✓ Sent':'Not yet'}</div></div>
-      <div class="sc-cell"><div class="sc-label">Payment</div><div class="sc-value">${s.payment||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">MNF</div><div class="sc-value">${s.mnf||'—'}</div></div>
-      <div class="sc-cell"><div class="sc-label">PQ</div><div class="sc-value">${s.pq||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">AN</div><div class="sc-value">${s.an==='SENT'?'✓ Đã gửi':'Chưa gửi'}</div></div>
+      <div class="sc-cell"><div class="sc-label">Thanh toán (KH)</div><div class="sc-value">${s.khPaid||'Chưa TT'}</div></div>
+      <div class="sc-cell"><div class="sc-label">INV Carrier</div><div class="sc-value">${s.invPaid||'—'}</div></div>
+      <div class="sc-cell"><div class="sc-label">EDO</div><div class="sc-value">${s.edo||'—'}</div></div>
     </div>
 
     <div class="sc-footer">
       <span class="sc-vessel">🚢 <strong>${s.vessel||'—'}</strong>${s.note ? ' &nbsp;·&nbsp; ' + s.note : ''}</span>
-      <button class="btn-detail-toggle" onclick="toggleDetail(this)">More details ▾</button>
+      <button class="btn-detail-toggle" onclick="toggleDetail(this)">Chi tiết ▾</button>
     </div>
 
     <div class="sc-detail">
       <div class="detail-row">
         <div class="detail-block">
-          <h4>Shipment Progress</h4>
+          <h4>Tiến độ lô hàng</h4>
           <div class="timeline">
-            ${tStep('Departed',  isDone('ARRIVED'))}
-            ${tStep('Arrived',   isDone('ARRIVED'))}
-            ${tStep('Unstuffed', isDone('UNSTUFFED'))}
-            ${tStep('Ready',     isDone('READY'))}
+            ${tStep('Tàu khởi hành', isDone('ARRIVED'))}
+            ${tStep('Hàng về kho',   isDone('ARRIVED'))}
+            ${tStep('Đã rút hàng',   isDone('UNSTUFFED'))}
+            ${tStep('Sẵn sàng lấy', isDone('READY'))}
           </div>
         </div>
-<div class="detail-block">
-          <h4>Notes</h4>
+        <div class="detail-block">
+          <h4>Thông tin khác</h4>
           <dl>
-            <dt>Staff note</dt><dd>${s.note||'—'}</dd>
+            <dt>MNF</dt>        <dd>${s.mnf||'—'}</dd>
+            <dt>PQ</dt>         <dd>${s.pq||'—'}</dd>
+            <dt>Tồn kho</dt>    <dd>${s.tonKho||'—'}</dd>
+            <dt>DN Agent</dt>   <dd>${s.dnAgent||'—'}</dd>
+            <dt>Ghi chú</dt>    <dd>${s.note||'—'}</dd>
           </dl>
         </div>
       </div>
@@ -336,17 +374,22 @@ function tStep(label, done) {
   return `<div class="t-step ${done?'done':''}"><div class="t-dot"></div><div class="t-lbl">${label}</div></div>`;
 }
 function anBadge(v) {
-  return v==='YES' ? '<span class="badge b-ok">AN Sent</span>' : '<span class="badge b-grey">AN Pending</span>';
+  return String(v).toUpperCase()==='SENT'
+    ? '<span class="badge b-ok">AN Đã gửi</span>'
+    : '<span class="badge b-grey">AN Chưa gửi</span>';
 }
 function payBadge(v) {
-  const m = { PAID:'b-ok', PARTIAL:'b-warn', UNPAID:'b-err' };
-  return `<span class="badge ${m[v]||'b-grey'}">${v||'—'}</span>`;
+  const val = String(v||'').toUpperCase();
+  if (val==='PAID')    return '<span class="badge b-ok">Đã thanh toán</span>';
+  if (val==='PARTIAL') return '<span class="badge b-warn">Thanh toán một phần</span>';
+  if (val==='UNPAID')  return '<span class="badge b-err">Chưa thanh toán</span>';
+  return '<span class="badge b-err">Chưa thanh toán</span>';
 }
 
 function toggleDetail(btn) {
   const detail = btn.closest('.shipment-card').querySelector('.sc-detail');
   const open   = detail.classList.toggle('open');
-  btn.textContent = open ? 'Less ▴' : 'More details ▾';
+  btn.textContent = open ? 'Thu gọn ▴' : 'Chi tiết ▾';
 }
 
 // ── CHATBOT ───────────────────────────────────────────────────────────────

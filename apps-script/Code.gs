@@ -1,37 +1,42 @@
 // ═══════════════════════════════════════════════════════════════════════════
-//  ImportTrack — Google Apps Script Backend
-//  Deploy as: Web App → Execute as ME → Anyone can access
-//  Sheet: https://docs.google.com/spreadsheets/d/112yIRKnMuS9T1kSccSVqG42EyRfZm6bsC3M1DQ4lgZ4
+//  WeDo Forwarding — Shipment Tracking API
+//  Deploy: Extensions → Apps Script → Deploy → New deployment
+//          Type: Web App | Execute as: Me | Access: Anyone
+//  Sheet: https://docs.google.com/spreadsheets/d/1PXWF8t-8OIiBleTfgG7PrVyPJ5uqMsPk-5nTMvejKSo
 // ═══════════════════════════════════════════════════════════════════════════
 
-const SHEET_ID    = '112yIRKnMuS9T1kSccSVqG42EyRfZm6bsC3M1DQ4lgZ4';
-const SHIP_SHEET  = 'Shipments';   // your main tracking sheet tab name
-const CUST_SHEET  = 'Customers';   // new tab you'll create for login credentials
+const SHEET_ID   = '1PXWF8t-8OIiBleTfgG7PrVyPJ5uqMsPk-5nTMvejKSo';
+const TAB_MAIN   = 'Sheet1';  // main tracking tab name — change if different
+const TAB_BL     = 'Sheet1';  // REF/BL mapping is on the same sheet (second table)
 
-// ── Column positions in your Shipments sheet (1-indexed) ──────────────────
-// A=1  B=2  C=3  D=4  E=5  F=6  G=7  H=8  I=9  J=10  K=11  L=12
-// then M=13(AN_EMAILS) N=14(PORTAL_ACCESS) O=15(PAYMENT) P=16(WAREHOUSE) Q=17(CUSTOMER_CODE)
-const COL = {
-  TYPE          : 1,   // A – CONSOL / LCL
-  AGENT         : 2,   // B – Agent name
-  ETD           : 3,   // C – ETD date
-  ETA           : 4,   // D – ETA date
-  MBL           : 5,   // E – MBL # (bold in your sheet)
-  NOTE          : 6,   // F – Note / status note
-  VESSEL        : 7,   // G – VV (Vessel Voyage)
-  MNF_CHECK     : 8,   // H – MNF ✓
-  CHECK_MNF     : 9,   // I – check mnf
-  PQ            : 10,  // J – PQ
-  FINAL_HBL     : 11,  // K – FINAL HBL
-  AN_SENT       : 12,  // L – AN sent (yes/no or date)
-  AN_EMAILS     : 13,  // M – which customer emails AN was sent to
-  PORTAL_ACCESS : 14,  // N – portal access YES/NO
-  PAYMENT       : 15,  // O – payment status: PAID / PARTIAL / UNPAID
-  WAREHOUSE     : 16,  // P – warehouse: PENDING / ARRIVED / UNSTUFFED / READY
-  CUSTOMER_CODE : 17,  // Q – customer code (links to Customers sheet)
+// ── Column positions in Sheet1 — Shipment table (1-indexed) ───────────────
+// Row 1-2 = merged headers, Row 3 = sub-headers, data from Row 4
+const C = {
+  TYPE      : 1,   // A – CONSOL / LCL
+  AGENT     : 2,   // B – Agent
+  ETD       : 3,   // C – ETD
+  ETA       : 4,   // D – ETA
+  MBL       : 5,   // E – MBL #
+  NOTE      : 6,   // F – NOTE
+  VESSEL    : 7,   // G – VV
+  MNF       : 8,   // H – MNF ✓
+  CHECK_MNF : 9,   // I – check mnf
+  PQ        : 10,  // J – PQ
+  FINAL_HBL : 11,  // K – FINAL HBL
+  AN        : 12,  // L – AN sent (SENT or blank)
+  INV_PAID  : 13,  // M – INV CARRIER / PAID
+  EDO       : 14,  // N – INV CARRIER / EDO
+  KHO       : 15,  // O – KHO / Tình hình KT
+  DN_AGENT  : 16,  // P – DN AGENT / Nhập DN ✓
+  KH_PAID   : 17,  // Q – KH TT / PAID
+  TON_KHO   : 18,  // R – TỒN KHO / Tồn kho
+  GHI_CHU   : 19,  // S – TỒN KHO / Ghi chú
 };
 
-// ── CORS helper ───────────────────────────────────────────────────────────
+// REF/BL table starts after a gap — detect by looking for "REF" header
+// Columns: A=REF, B=BL
+
+// ── CORS ──────────────────────────────────────────────────────────────────
 function cors(output) {
   return output
     .setMimeType(ContentService.MimeType.JSON)
@@ -41,159 +46,158 @@ function cors(output) {
 function doGet(e) {
   const p      = e.parameter;
   const action = p.action || '';
-
   try {
-    if (action === 'login')     return cors(ContentService.createTextOutput(JSON.stringify(handleLogin(p))));
-    if (action === 'shipments') return cors(ContentService.createTextOutput(JSON.stringify(handleShipments(p))));
-    if (action === 'chat')      return cors(ContentService.createTextOutput(JSON.stringify(handleChat(p))));
-    return cors(ContentService.createTextOutput(JSON.stringify({ ok: true, msg: 'ImportTrack API running' })));
+    if (action === 'search') return cors(ContentService.createTextOutput(JSON.stringify(handleSearch(p))));
+    if (action === 'chat')   return cors(ContentService.createTextOutput(JSON.stringify(handleChat(p))));
+    return cors(ContentService.createTextOutput(JSON.stringify({ ok: true, msg: 'WeDo Forwarding API running' })));
   } catch (err) {
     return cors(ContentService.createTextOutput(JSON.stringify({ success: false, message: err.message })));
   }
 }
 
-// ── LOGIN ─────────────────────────────────────────────────────────────────
-// Customers sheet columns: A=CustomerCode  B=Email  C=PIN  D=Name  E=Phone
-function handleLogin(p) {
-  const email = (p.email || '').trim().toLowerCase();
-  const pin   = (p.pin   || '').trim();
-  if (!email || !pin) return { success: false, message: 'Email and PIN required.' };
+// ── SEARCH by BL number ───────────────────────────────────────────────────
+function handleSearch(p) {
+  const blQuery = String(p.bl || '').trim().toUpperCase();
+  if (!blQuery) return { success: false, message: 'BL number required.' };
 
-  const ss   = SpreadsheetApp.openById(SHEET_ID);
-  const sh   = ss.getSheetByName(CUST_SHEET);
-  if (!sh) return { success: false, message: 'Customer sheet not set up yet.' };
+  const ss      = SpreadsheetApp.openById(SHEET_ID);
+  const sh      = ss.getSheetByName(TAB_MAIN);
+  if (!sh) return { success: false, message: 'Sheet not found.' };
 
-  const rows = sh.getDataRange().getValues();
-  for (let i = 1; i < rows.length; i++) {
-    const rowEmail = String(rows[i][1]).trim().toLowerCase();
-    const rowPin   = String(rows[i][2]).trim();
-    const portalOk = String(rows[i][5]).trim().toUpperCase(); // column F = portal access
-    if (rowEmail === email && rowPin === pin) {
-      if (portalOk === 'NO') return { success: false, message: 'Your account does not have portal access. Please contact your coordinator.' };
-      return {
-        success: true,
-        customer: {
-          code  : rows[i][0],
-          email : rows[i][1],
-          name  : rows[i][3],
-          phone : rows[i][4],
-        }
-      };
-    }
+  const allData = sh.getDataRange().getValues();
+
+  // ── Build shipment map (keyed by MBL, data rows start after row 3) ──
+  const shipments = {};
+  let dataStarted = false;
+  for (let i = 0; i < allData.length; i++) {
+    const row = allData[i];
+    const cellA = String(row[0]).trim().toUpperCase();
+
+    // Detect header row
+    if (cellA === 'CONSOL' || cellA === 'LCL') dataStarted = true;
+    if (!dataStarted) continue;
+
+    const mbl = String(row[C.MBL - 1]).trim();
+    if (!mbl || mbl.toUpperCase() === 'MBL #') continue;
+
+    shipments[mbl.toUpperCase()] = {
+      type     : row[C.TYPE      - 1],
+      agent    : row[C.AGENT     - 1],
+      etd      : formatDate(row[C.ETD      - 1]),
+      eta      : formatDate(row[C.ETA      - 1]),
+      mbl      : mbl,
+      note     : row[C.NOTE      - 1],
+      vessel   : row[C.VESSEL    - 1],
+      mnf      : row[C.MNF       - 1],
+      checkMnf : row[C.CHECK_MNF - 1],
+      pq       : row[C.PQ        - 1],
+      finalHbl : row[C.FINAL_HBL - 1],
+      an       : row[C.AN        - 1],
+      invPaid  : row[C.INV_PAID  - 1],
+      edo      : row[C.EDO       - 1],
+      kho      : row[C.KHO       - 1],
+      dnAgent  : row[C.DN_AGENT  - 1],
+      khPaid   : row[C.KH_PAID   - 1],
+      tonKho   : row[C.TON_KHO   - 1],
+      ghiChu   : row[C.GHI_CHU   - 1],
+    };
   }
-  return { success: false, message: 'Invalid email or PIN.' };
-}
 
-// ── SHIPMENTS ─────────────────────────────────────────────────────────────
-function handleShipments(p) {
-  const customerCode = (p.code || '').trim();
-  if (!customerCode) return { success: false, message: 'Customer code required.' };
+  // ── Build BL → REF map (second table, REF header in col A) ──
+  const blMap = {};
+  let inBlTable = false;
+  for (let i = 0; i < allData.length; i++) {
+    const row   = allData[i];
+    const colA  = String(row[0]).trim().toUpperCase();
+    const colB  = String(row[1]).trim();
+    if (colA === 'REF') { inBlTable = true; continue; }
+    if (!inBlTable) continue;
+    if (!colB) continue;
+    // REF may span multiple BL rows (merged cell shows only on first)
+    const ref = colA || (Object.keys(blMap).length ? Object.values(blMap).slice(-1)[0] : '');
+    if (ref) blMap[colB.toUpperCase()] = ref.toUpperCase();
+  }
 
-  const ss   = SpreadsheetApp.openById(SHEET_ID);
-  const sh   = ss.getSheetByName(SHIP_SHEET);
-  if (!sh) return { success: false, message: 'Shipments sheet not found.' };
+  // ── Lookup: BL → REF → shipment ──
+  let results = [];
 
-  const rows    = sh.getDataRange().getValues();
-  const results = [];
+  // Exact BL match
+  if (blMap[blQuery]) {
+    const ref = blMap[blQuery];
+    const s   = shipments[ref];
+    if (s) results.push({ ...s, bl: blQuery, ref });
+  }
 
-  // rows[0] and rows[1] are header rows in your sheet, data starts row 4 (index 3)
-  for (let i = 3; i < rows.length; i++) {
-    const r    = rows[i];
-    const code = String(r[COL.CUSTOMER_CODE - 1]).trim();
-    if (!code) continue; // skip empty rows
-    if (code !== customerCode) continue;
-
-    results.push({
-      type         : r[COL.TYPE          - 1],
-      agent        : r[COL.AGENT         - 1],
-      etd          : formatDate(r[COL.ETD          - 1]),
-      eta          : formatDate(r[COL.ETA          - 1]),
-      mbl          : r[COL.MBL           - 1],
-      note         : r[COL.NOTE          - 1],
-      vessel       : r[COL.VESSEL        - 1],
-      mnf          : r[COL.MNF_CHECK     - 1],
-      checkMnf     : r[COL.CHECK_MNF     - 1],
-      pq           : r[COL.PQ            - 1],
-      finalHbl     : r[COL.FINAL_HBL     - 1],
-      anSent       : r[COL.AN_SENT       - 1],
-      anEmails     : r[COL.AN_EMAILS     - 1],
-      portalAccess : r[COL.PORTAL_ACCESS - 1],
-      payment      : r[COL.PAYMENT       - 1],
-      warehouse    : r[COL.WAREHOUSE     - 1],
+  // Partial BL match
+  if (!results.length) {
+    Object.entries(blMap).forEach(([bl, ref]) => {
+      if (bl.includes(blQuery)) {
+        const s = shipments[ref];
+        if (s && !results.find(r => r.bl === bl)) results.push({ ...s, bl, ref });
+      }
     });
   }
 
-  return { success: true, shipments: results };
+  // Direct REF/MBL match fallback
+  if (!results.length) {
+    Object.entries(shipments).forEach(([ref, s]) => {
+      if (ref.includes(blQuery)) results.push({ ...s, bl: ref, ref });
+    });
+  }
+
+  return { success: true, results };
 }
 
-// ── CHATBOT (Claude API proxy — keeps API key server-side) ─────────────────
-const CLAUDE_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE'; // paste here OR use PropertiesService
+// ── CHATBOT ───────────────────────────────────────────────────────────────
+const CLAUDE_API_KEY = 'YOUR_ANTHROPIC_API_KEY_HERE';
 
 function handleChat(p) {
-  const customerCode = (p.code    || '').trim();
-  const question     = (p.message || '').trim();
-  if (!question) return { success: false, message: 'Empty message.' };
+  const bl      = String(p.bl      || '').trim();
+  const message = String(p.message || '').trim();
+  if (!message) return { success: false, message: 'Empty message.' };
 
-  // Fetch shipment context for this customer
-  const shipmentData = handleShipments({ code: customerCode });
-  const context = shipmentData.success && shipmentData.shipments.length > 0
-    ? JSON.stringify(shipmentData.shipments, null, 2)
-    : 'No shipments found for this customer.';
+  const searchResult = bl ? handleSearch({ bl }) : { success: true, results: [] };
+  const context = searchResult.success && searchResult.results.length
+    ? JSON.stringify(searchResult.results, null, 2)
+    : 'Chưa có BL number được chọn.';
 
-  const systemPrompt = `You are an AI assistant for an import logistics company (Import Consolidation department).
-You help customers track their shipments. Answer in the same language the customer uses (Vietnamese or English).
-Be concise, friendly, and professional.
+  const systemPrompt = `Bạn là trợ lý AI của WeDo Forwarding, bộ phận import consolidation.
+Trả lời bằng ngôn ngữ khách hàng dùng (tiếng Việt hoặc tiếng Anh). Ngắn gọn, chuyên nghiệp.
 
-Current shipment data for this customer:
+Dữ liệu lô hàng hiện tại:
 ${context}
 
-Field guide:
-- ETD = Estimated Time of Departure (from origin port)
-- ETA = Estimated Time of Arrival (at destination)
-- MBL = Master Bill of Lading number
-- AN = Arrival Notice (sent to customer emails when shipment arrives)
-- MNF = Manifest
-- PQ = Phytosanitary/Quarantine clearance
-- HBL = House Bill of Lading
-- Warehouse status: PENDING=not yet arrived | ARRIVED=at warehouse | UNSTUFFED=container opened & sorted | READY=ready for pickup
-- Payment: PAID | PARTIAL | UNPAID`;
-
-  const payload = JSON.stringify({
-    model      : 'claude-haiku-4-5-20251001',
-    max_tokens : 500,
-    system     : systemPrompt,
-    messages   : [{ role: 'user', content: question }]
-  });
+Giải thích các trường:
+- ETD = Ngày tàu rời cảng xuất
+- ETA = Ngày tàu dự kiến đến cảng đích
+- AN = Arrival Notice (thông báo hàng đến)
+- KHO/kho = Tình trạng tại kho (ARRIVED=hàng về kho, UNSTUFFED=đã rút hàng, READY=sẵn sàng lấy)
+- KH TT/PAID = Tình trạng thanh toán của khách hàng
+- INV PAID = Hoá đơn hãng tàu đã thanh toán chưa
+- EDO = Electronic Delivery Order
+- Tồn kho = Tình trạng tồn kho hiện tại`;
 
   const apiKey = CLAUDE_API_KEY !== 'YOUR_ANTHROPIC_API_KEY_HERE'
     ? CLAUDE_API_KEY
     : PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-
-  if (!apiKey) return { success: false, message: 'Chatbot not configured. Ask your coordinator.' };
+  if (!apiKey) return { success: false, message: 'Chatbot chưa được cấu hình.' };
 
   const response = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method      : 'post',
-    contentType : 'application/json',
-    headers     : {
-      'x-api-key'         : apiKey,
-      'anthropic-version' : '2023-06-01',
-    },
-    payload     : payload,
+    method     : 'post',
+    contentType: 'application/json',
+    headers    : { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    payload    : JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 500, system: systemPrompt, messages: [{ role: 'user', content: message }] }),
     muteHttpExceptions: true,
   });
 
   const result = JSON.parse(response.getContentText());
-  if (result.content && result.content[0]) {
-    return { success: true, reply: result.content[0].text };
-  }
-  return { success: false, message: 'AI response error. Please try again.' };
+  return result.content?.[0]
+    ? { success: true, reply: result.content[0].text }
+    : { success: false, message: 'AI error. Vui lòng thử lại.' };
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────
 function formatDate(val) {
   if (!val) return '';
-  if (val instanceof Date) {
-    return Utilities.formatDate(val, Session.getScriptTimeZone(), 'dd/MM/yyyy');
-  }
+  if (val instanceof Date) return Utilities.formatDate(val, Session.getScriptTimeZone(), 'dd/MM/yyyy');
   return String(val);
 }
