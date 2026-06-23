@@ -3,319 +3,96 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- ============================================================= -->
-  <!-- EDIT: Page title & meta (shown in browser tab & search/social) -->
-  <!-- ============================================================= -->
-  <title>Your Name — Founder & Product Builder</title>
-  <meta name="description" content="Founder and product builder. I turn ambiguous problems into products people love." />
-  <meta name="author" content="Your Name" />
-
-  <!-- Open Graph / social preview -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Your Name — Founder & Product Builder" />
-  <meta property="og:description" content="Founder and product builder. I turn ambiguous problems into products people love." />
-
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>✺</text></svg>" />
-
-  <!-- Fonts -->
+  <title>Shipment Tracking Portal</title>
+  <link rel="stylesheet" href="css/login.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
-
-  <link rel="stylesheet" href="css/styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
-
 <body>
-  <!-- Cinematic texture & lighting layers (decorative) -->
-  <div class="grain" aria-hidden="true"></div>
-  <div class="spotlight" aria-hidden="true"></div>
-
-  <!-- ================== NAV ================== -->
-  <header class="nav" id="nav">
-    <a class="nav__brand" href="#top" aria-label="Home">
-      <!-- EDIT: your initials / monogram -->
-      <span class="nav__mark">✺</span>
-      <span class="nav__name">Your Name</span>
-    </a>
-    <nav class="nav__links" aria-label="Primary">
-      <a href="#about">About</a>
-      <a href="#work">Work</a>
-      <a href="#services">Services</a>
-      <a href="#contact" class="nav__cta">Contact</a>
-    </nav>
-  </header>
-
-  <main id="top">
-
-    <!-- ================== HERO ================== -->
-    <section class="hero" id="hero">
-      <!-- Parallax light orbs (decorative) -->
-      <div class="orbs" aria-hidden="true">
-        <span class="orb orb--violet" data-depth="0.04"></span>
-        <span class="orb orb--cyan" data-depth="0.07"></span>
-        <span class="orb orb--blue" data-depth="0.025"></span>
+  <div class="login-bg">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="10" fill="#1a56db"/>
+          <path d="M8 28L14 16L20 22L26 12L32 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="32" cy="20" r="3" fill="#60a5fa"/>
+        </svg>
+        <span class="login-brand">ImportTrack</span>
       </div>
 
-      <div class="hero__inner">
-        <!-- EDIT: small eyebrow line above your name -->
-        <p class="hero__eyebrow reveal">Founder · Product · 0→1</p>
+      <h1 class="login-title">Shipment Tracking</h1>
+      <p class="login-sub">Enter your credentials to track your shipments</p>
 
-        <!-- EDIT: your headline. The word in <em> gets the gradient. -->
-        <h1 class="hero__title reveal" data-reveal-delay="80">
-          I build <em>products</em><br />that people<br />remember.
-        </h1>
-
-        <!-- EDIT: one or two sentence positioning statement -->
-        <p class="hero__sub reveal" data-reveal-delay="160">
-          I'm Your Name — a founder and product builder. For the last decade I've
-          turned ambiguous problems into companies, teams, and products people love.
-        </p>
-
-        <div class="hero__actions reveal" data-reveal-delay="240">
-          <a href="#work" class="btn btn--primary">View my work</a>
-          <a href="#contact" class="btn btn--ghost">Get in touch</a>
+      <form id="loginForm" class="login-form" autocomplete="off">
+        <div class="field-group">
+          <label for="email">Email / Customer Code</label>
+          <input type="text" id="email" placeholder="your@email.com" required autocomplete="username" />
         </div>
-      </div>
-
-      <a href="#about" class="hero__scroll" aria-label="Scroll to about">
-        <span class="hero__scroll-line"></span>
-        <span class="hero__scroll-text">Scroll</span>
-      </a>
-    </section>
-
-    <!-- ================== MARQUEE ================== -->
-    <!-- EDIT: rotating keywords / what you do -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        <span>Strategy</span><span class="dot">✺</span>
-        <span>Product</span><span class="dot">✺</span>
-        <span>Design</span><span class="dot">✺</span>
-        <span>Fundraising</span><span class="dot">✺</span>
-        <span>Team Building</span><span class="dot">✺</span>
-        <span>Go-to-Market</span><span class="dot">✺</span>
-        <span>Strategy</span><span class="dot">✺</span>
-        <span>Product</span><span class="dot">✺</span>
-        <span>Design</span><span class="dot">✺</span>
-        <span>Fundraising</span><span class="dot">✺</span>
-        <span>Team Building</span><span class="dot">✺</span>
-        <span>Go-to-Market</span><span class="dot">✺</span>
-      </div>
-    </div>
-
-    <!-- ================== ABOUT ================== -->
-    <section class="section about" id="about">
-      <p class="section__label reveal">01 — About</p>
-
-      <!-- EDIT: big about statement -->
-      <h2 class="about__statement reveal" data-reveal-delay="80">
-        I care about the moment a product clicks — when complexity disappears and
-        people just <em>get it</em>. Everything I build aims for that moment.
-      </h2>
-
-      <div class="about__grid">
-        <div class="about__body reveal" data-reveal-delay="120">
-          <!-- EDIT: your story -->
-          <p>
-            I've spent my career at the intersection of product, design, and
-            business — founding companies, leading teams, and shipping things that
-            matter. My approach is simple: start with the human, earn trust through
-            craft, and move fast without breaking what counts.
-          </p>
-          <p>
-            Whether it's a zero-to-one venture or scaling an idea to thousands of
-            users, I obsess over the details that make an experience feel inevitable.
-          </p>
+        <div class="field-group">
+          <label for="pin">PIN / Password</label>
+          <input type="password" id="pin" placeholder="••••••" required autocomplete="current-password" />
         </div>
+        <div id="loginError" class="login-error hidden">Invalid credentials. Please try again.</div>
+        <button type="submit" class="btn-login" id="loginBtn">
+          <span id="loginBtnText">Sign In</span>
+          <svg id="loginSpinner" class="spinner hidden" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" stroke="white" stroke-width="3" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+          </svg>
+        </button>
+      </form>
 
-        <ul class="about__facts reveal" data-reveal-delay="200">
-          <!-- EDIT: quick facts -->
-          <li><span>Based in</span><strong>San Francisco, CA</strong></li>
-          <li><span>Focus</span><strong>Consumer & AI products</strong></li>
-          <li><span>Currently</span><strong>Building something new</strong></li>
-          <li><span>Previously</span><strong>2 exits · 1 IPO</strong></li>
-        </ul>
-      </div>
-
-      <!-- Count-up stats -->
-      <div class="stats">
-        <!-- EDIT: your numbers. data-count = final value -->
-        <div class="stat reveal" data-reveal-delay="80">
-          <span class="stat__num" data-count="12" data-suffix="+">0</span>
-          <span class="stat__label">Years building</span>
-        </div>
-        <div class="stat reveal" data-reveal-delay="140">
-          <span class="stat__num" data-count="4" data-suffix="">0</span>
-          <span class="stat__label">Companies founded</span>
-        </div>
-        <div class="stat reveal" data-reveal-delay="200">
-          <span class="stat__num" data-count="40" data-suffix="M+">0</span>
-          <span class="stat__label">Users reached</span>
-        </div>
-        <div class="stat reveal" data-reveal-delay="260">
-          <span class="stat__num" data-count="60" data-suffix="M+">0</span>
-          <span class="stat__label">Capital raised ($)</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================== WORK / VENTURES ================== -->
-    <section class="section work" id="work">
-      <p class="section__label reveal">02 — Work & Ventures</p>
-      <h2 class="section__title reveal" data-reveal-delay="80">Things I've built.</h2>
-
-      <div class="cards">
-        <!-- EDIT: duplicate a <article> to add ventures -->
-        <article class="card reveal" data-reveal-delay="80">
-          <div class="card__top">
-            <span class="card__year">2023 — Now</span>
-            <span class="card__tag">Founder & CEO</span>
-          </div>
-          <h3 class="card__title">Venture One</h3>
-          <p class="card__desc">
-            A short, punchy description of the company — what it does, who it's for,
-            and the outcome you're most proud of.
-          </p>
-          <div class="card__meta">
-            <span>AI</span><span>Consumer</span><span>Seed → Series A</span>
-          </div>
-          <span class="card__arrow" aria-hidden="true">↗</span>
-        </article>
-
-        <article class="card reveal" data-reveal-delay="140">
-          <div class="card__top">
-            <span class="card__year">2019 — 2023</span>
-            <span class="card__tag">Co-Founder</span>
-          </div>
-          <h3 class="card__title">Venture Two</h3>
-          <p class="card__desc">
-            Describe the product, the scale you reached, and the exit or milestone.
-            Keep it human and concrete.
-          </p>
-          <div class="card__meta">
-            <span>SaaS</span><span>B2B</span><span>Acquired</span>
-          </div>
-          <span class="card__arrow" aria-hidden="true">↗</span>
-        </article>
-
-        <article class="card reveal" data-reveal-delay="200">
-          <div class="card__top">
-            <span class="card__year">2016 — 2019</span>
-            <span class="card__tag">Head of Product</span>
-          </div>
-          <h3 class="card__title">Venture Three</h3>
-          <p class="card__desc">
-            A role or project that shaped you. What did you ship, lead, or learn?
-          </p>
-          <div class="card__meta">
-            <span>Marketplace</span><span>Growth</span><span>IPO</span>
-          </div>
-          <span class="card__arrow" aria-hidden="true">↗</span>
-        </article>
-
-        <article class="card reveal" data-reveal-delay="260">
-          <div class="card__top">
-            <span class="card__year">Ongoing</span>
-            <span class="card__tag">Advisor / Angel</span>
-          </div>
-          <h3 class="card__title">Selected Investments</h3>
-          <p class="card__desc">
-            Founders I back and advise across consumer, AI, and dev tools. Happy to
-            make intros for the right teams.
-          </p>
-          <div class="card__meta">
-            <span>Angel</span><span>Advisor</span><span>15+ companies</span>
-          </div>
-          <span class="card__arrow" aria-hidden="true">↗</span>
-        </article>
-      </div>
-    </section>
-
-    <!-- ================== SERVICES ================== -->
-    <section class="section services" id="services">
-      <p class="section__label reveal">03 — Our Services</p>
-      <h2 class="section__title reveal" data-reveal-delay="80">How we work together.</h2>
-      <!-- EDIT: short line introducing your offering -->
-      <p class="services__intro reveal" data-reveal-delay="140">
-        Two ways to partner — pick the depth of involvement that fits your stage.
+      <p class="login-contact">
+        Need access? Contact your import coordinator.
       </p>
+    </div>
+  </div>
 
-      <div class="tiers">
-        <!-- ---------- GENERAL ---------- -->
-        <article class="tier reveal" data-reveal-delay="120">
-          <div class="tier__head">
-            <span class="tier__name">General</span>
-            <!-- EDIT: price / framing (or remove) -->
-            <span class="tier__price">From $—<span>/project</span></span>
-          </div>
-          <!-- EDIT: one-line summary -->
-          <p class="tier__tagline">Focused advisory to get you moving in the right direction.</p>
-          <ul class="tier__features">
-            <!-- EDIT: what's included -->
-            <li>Product & strategy consultation</li>
-            <li>Roadmap and positioning review</li>
-            <li>Async feedback &amp; recommendations</li>
-            <li>Up to 2 sessions per month</li>
-          </ul>
-          <a href="#contact" class="btn btn--ghost tier__cta">Get started</a>
-        </article>
+  <script src="js/config.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      const pin = document.getElementById('pin').value.trim();
+      const btn = document.getElementById('loginBtn');
+      const btnText = document.getElementById('loginBtnText');
+      const spinner = document.getElementById('loginSpinner');
+      const errorEl = document.getElementById('loginError');
 
-        <!-- ---------- PREMIUM ---------- -->
-        <article class="tier tier--premium reveal" data-reveal-delay="200">
-          <span class="tier__badge">Most popular</span>
-          <div class="tier__head">
-            <span class="tier__name">Premium</span>
-            <!-- EDIT: price / framing (or remove) -->
-            <span class="tier__price">From $—<span>/month</span></span>
-          </div>
-          <!-- EDIT: one-line summary -->
-          <p class="tier__tagline">Hands-on, end-to-end partnership from idea to launch.</p>
-          <ul class="tier__features">
-            <!-- EDIT: what's included -->
-            <li>Everything in General, plus:</li>
-            <li>Embedded product &amp; design leadership</li>
-            <li>Hands-on build &amp; go-to-market support</li>
-            <li>Fundraising &amp; investor introductions</li>
-            <li>Priority access &amp; weekly working sessions</li>
-          </ul>
-          <a href="#contact" class="btn btn--primary tier__cta">Work with me</a>
-        </article>
-      </div>
-    </section>
+      errorEl.classList.add('hidden');
+      btnText.textContent = 'Signing in…';
+      spinner.classList.remove('hidden');
+      btn.disabled = true;
 
-    <!-- ================== CONTACT ================== -->
-    <section class="section contact" id="contact">
-      <div class="contact__inner">
-        <p class="section__label reveal">04 — Contact</p>
-        <!-- EDIT: closing CTA headline -->
-        <h2 class="contact__title reveal" data-reveal-delay="80">
-          Let's build<br /><em>something</em> together.
-        </h2>
-        <p class="contact__sub reveal" data-reveal-delay="160">
-          Have an idea, a role, or a wild question? My inbox is open.
-        </p>
+      try {
+        const url = window.APPS_SCRIPT_URL;
+        if (!url || url === 'YOUR_APPS_SCRIPT_WEB_APP_URL_HERE') {
+          throw new Error('NO_URL');
+        }
 
-        <!-- EDIT: your email -->
-        <a href="mailto:hello@yourdomain.com" class="contact__email reveal" data-reveal-delay="220">
-          hello@yourdomain.com
-        </a>
+        const res = await fetch(`${url}?action=login&email=${encodeURIComponent(email)}&pin=${encodeURIComponent(pin)}`);
+        const data = await res.json();
 
-        <ul class="socials reveal" data-reveal-delay="280">
-          <!-- EDIT: your links -->
-          <li><a href="https://linkedin.com/in/yourhandle" target="_blank" rel="noopener">LinkedIn</a></li>
-          <li><a href="https://x.com/yourhandle" target="_blank" rel="noopener">X / Twitter</a></li>
-          <li><a href="https://github.com/yourhandle" target="_blank" rel="noopener">GitHub</a></li>
-        </ul>
-      </div>
-    </section>
-  </main>
-
-  <!-- ================== FOOTER ================== -->
-  <footer class="footer">
-    <span>© <span id="year">2026</span> Your Name</span>
-    <span class="footer__made">Designed &amp; built with intent.</span>
-  </footer>
-
-  <script src="js/main.js"></script>
+        if (data.success) {
+          sessionStorage.setItem('customer', JSON.stringify(data.customer));
+          window.location.href = 'dashboard.html';
+        } else {
+          errorEl.textContent = data.message || 'Invalid credentials. Please try again.';
+          errorEl.classList.remove('hidden');
+        }
+      } catch (err) {
+        if (err.message === 'NO_URL') {
+          errorEl.textContent = 'Portal not configured yet. Ask your coordinator to set up the Apps Script URL.';
+        } else {
+          errorEl.textContent = 'Connection error. Please try again.';
+          console.error(err);
+        }
+        errorEl.classList.remove('hidden');
+      } finally {
+        btnText.textContent = 'Sign In';
+        spinner.classList.add('hidden');
+        btn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>

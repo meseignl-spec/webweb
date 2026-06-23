@@ -1,0 +1,61 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { font-family: 'Inter', sans-serif; background: #0f172a; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+.login-bg {
+  width: 100%; min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+}
+
+.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.login-brand { font-size: 1.15rem; font-weight: 700; color: #f1f5f9; }
+
+.login-title { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+.login-sub   { font-size: 0.875rem; color: #94a3b8; margin-bottom: 28px; }
+
+.login-form { display: flex; flex-direction: column; gap: 18px; }
+
+.field-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+.field-group input {
+  width: 100%; padding: 11px 14px;
+  background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+  color: #f1f5f9; font-size: 0.95rem; font-family: inherit;
+  transition: border-color 0.2s;
+}
+.field-group input:focus { outline: none; border-color: #3b82f6; }
+
+.login-error {
+  background: #450a0a; border: 1px solid #7f1d1d;
+  color: #fca5a5; border-radius: 8px; padding: 10px 14px;
+  font-size: 0.85rem;
+}
+
+.btn-login {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px; background: #1a56db; color: white;
+  border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background 0.2s;
+}
+.btn-login:hover:not(:disabled) { background: #1d4ed8; }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.spinner {
+  width: 18px; height: 18px;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.login-contact { text-align: center; font-size: 0.8rem; color: #64748b; margin-top: 20px; }
+
+.hidden { display: none !important; }
