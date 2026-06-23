@@ -332,18 +332,9 @@ function renderCard(s) {
 
     <div class="sc-footer">
       <span class="sc-vessel">🚢 <strong>${s.vessel||'—'}</strong></span>
-      <button class="btn-detail-toggle" onclick="toggleDetail(this)">Shipment Progress ▾</button>
     </div>
 
-    <div class="sc-detail">
-      <div class="timeline">
-        ${tStep('Vessel Departed',     !!s.etd)}
-        ${tStep('Arrived at Port',     warrived)}
-        ${tStep('EDO Released',        String(s.edo||'').toUpperCase()==='RELEASED')}
-        ${tStep('Waiting for Pick Up', String(s.warehouse||'').toUpperCase().includes('WAITING'))}
-        ${tStep('Picked Up',           wpickedup)}
-      </div>
-    </div>
+    <div class="sc-detail" style="display:none"></div>
   </div>`;
 }
 
