@@ -53,92 +53,81 @@ function doGet(e) {
   }
 }
 
-// ── SEARCH by BL number ───────────────────────────────────────────────────
 function handleSearch(p) {
   const blQuery = String(p.bl || '').trim().toUpperCase();
   if (!blQuery) return { success: false, message: 'BL number required.' };
 
-  const ss       = SpreadsheetApp.openById(SHEET_ID);
-  const shMain   = ss.getSheetByName(TAB_MAIN);
-  const shBL     = ss.getSheetByName(TAB_BL);
-  if (!shMain) return { success: false, message: 'Status sheet not found.' };
-  if (!shBL)   return { success: false, message: 'HBL sheet not found.' };
+  const ss      = SpreadsheetApp.openById(SHEET_ID);
+  const sheets  = ss.getSheets();
 
-  const allData  = shMain.getDataRange().getValues();
-  const blData   = shBL.getDataRange().getValues();
+  // Tự động tìm tất cả tab có chứa "status" và "hbl" (không phân biệt hoa thường)
+  const statusSheets = sheets.filter(s => s.getName().toLowerCase().includes('status'));
+  const hblSheets    = sheets.filter(s => s.getName().toLowerCase().includes('hbl'));
 
-  // ── Build shipment map (keyed by MBL, data rows start after row 3) ──
+  if (!statusSheets.length) return { success: false, message: 'No Status sheet found.' };
+  if (!hblSheets.length)    return { success: false, message: 'No HBL sheet found.' };
+
+  // ── Gộp shipment data từ tất cả tab Status ──
   const shipments = {};
-  let dataStarted = false;
-  for (let i = 0; i < allData.length; i++) {
-    const row = allData[i];
-    const cellA = String(row[0]).trim().toUpperCase();
-
-    // Detect header row
-    if (cellA === 'CONSOL' || cellA === 'LCL') dataStarted = true;
-    if (!dataStarted) continue;
-
-    const mbl = String(row[C.MBL - 1]).trim();
-    if (!mbl || mbl.toUpperCase() === 'MBL #') continue;
-
-    shipments[mbl.toUpperCase()] = {
-      type     : row[C.TYPE      - 1],
-      agent    : row[C.AGENT     - 1],
-      etd      : formatDate(row[C.ETD      - 1]),
-      eta      : formatDate(row[C.ETA      - 1]),
-      mbl      : mbl,
-      note     : row[C.NOTE      - 1],
-      vessel   : row[C.VESSEL    - 1],
-      mnf      : row[C.MNF       - 1],
-      checkMnf : row[C.CHECK_MNF - 1],
-      pq       : row[C.PQ        - 1],
-      finalHbl : row[C.FINAL_HBL - 1],
-      an       : row[C.AN        - 1],
-      invPaid  : row[C.INV_PAID  - 1],
-      edo      : row[C.EDO       - 1],
-      kho      : row[C.KHO       - 1],
-      dnAgent  : row[C.DN_AGENT  - 1],
-      khPaid   : row[C.KH_PAID   - 1],
-      tonKho   : row[C.TON_KHO   - 1],
-      ghiChu   : row[C.GHI_CHU   - 1],
-    };
+  for (const sh of statusSheets) {
+    const allData = sh.getDataRange().getValues();
+    let dataStarted = false;
+    for (let i = 0; i < allData.length; i++) {
+      const row   = allData[i];
+      const cellA = String(row[0]).trim().toUpperCase();
+      if (cellA === 'CONSOL' || cellA === 'LCL') dataStarted = true;
+      if (!dataStarted) continue;
+      const mbl = String(row[C.MBL - 1]).trim();
+      if (!mbl || mbl.toUpperCase() === 'MBL #') continue;
+      shipments[mbl.toUpperCase()] = {
+        type    : row[C.TYPE      - 1],
+        agent   : row[C.AGENT     - 1],
+        etd     : formatDate(row[C.ETD - 1]),
+        eta     : formatDate(row[C.ETA - 1]),
+        mbl     : mbl,
+        vessel  : row[C.VESSEL    - 1],
+        an      : row[C.AN        - 1],
+        note    : row[C.NOTE      - 1],
+        kho     : row[C.KHO       - 1],
+        khPaid  : row[C.KH_PAID   - 1],
+        ghiChu  : row[C.GHI_CHU   - 1],
+      };
+    }
   }
 
-  // ── Build BL list from HBL tab ──
-  // Columns: A=REF, B=BL, C=container, D=payment, E=warehouse, F=EDO
+  // ── Gộp BL list từ tất cả tab HBL ──
   const blList = [];
-  let lastRef  = '';
-  for (let i = 0; i < blData.length; i++) {
-    const row  = blData[i];
-    const colA = String(row[0]).trim();
-    const colB = String(row[1]).trim();
-    if (colA.toUpperCase() === 'REF') continue; // skip header
-    if (!colB) continue;
-    if (colA) lastRef = colA.toUpperCase();
-    blList.push({
-      ref      : lastRef,
-      bl       : colB,
-      container: String(row[2] || '').trim(),
-      payment  : String(row[3] || '').trim(),
-      warehouse: String(row[4] || '').trim(),
-      edo      : String(row[5] || '').trim(),
-    });
+  for (const sh of hblSheets) {
+    const blData = sh.getDataRange().getValues();
+    let lastRef  = '';
+    for (let i = 0; i < blData.length; i++) {
+      const row  = blData[i];
+      const colA = String(row[0]).trim();
+      const colB = String(row[1]).trim();
+      if (colA.toUpperCase() === 'REF') continue;
+      if (!colB) continue;
+      if (colA) lastRef = colA.toUpperCase();
+      blList.push({
+        ref      : lastRef,
+        bl       : colB,
+        container: String(row[2] || '').trim(),
+        payment  : String(row[3] || '').trim(),
+        warehouse: String(row[4] || '').trim(),
+        edo      : String(row[5] || '').trim(),
+      });
+    }
   }
 
   // ── Lookup ──
   let matches = blList.filter(b => b.bl.toUpperCase() === blQuery);
   if (!matches.length) matches = blList.filter(b => b.bl.toUpperCase().includes(blQuery) || b.ref.includes(blQuery));
-  // Direct REF fallback
   if (!matches.length) {
     Object.keys(shipments).filter(r => r.includes(blQuery)).forEach(ref => {
       matches.push({ ref, bl: ref, payment: '', warehouse: '', edo: '' });
     });
   }
 
-  const results = matches
-    .map(b => ({ ...shipments[b.ref], ...b }))
-    .filter(r => r.etd);
-
+  const results = matches.map(b => ({ ...shipments[b.ref], ...b })).filter(r => r.etd);
   return { success: true, results };
 }
 
